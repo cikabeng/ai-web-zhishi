@@ -1,0 +1,30 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# ---------- Node ----------
+node_modules/
+dist/
+.npm-cache/
+*.local
+
+# ---------- 运行时数据 ----------
+storage/
+*.log
+.tmp/
+
+# ---------- 配置与密钥 ----------
+.env
+.env.*
+!.env.example
+
+# ---------- IDE / OS ----------
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
