@@ -19,6 +19,13 @@ const route = useRoute()
         <RouterLink to="/" class="nav-item" :class="{ 'is-active': route.path === '/' }">
           首页
         </RouterLink>
+        <RouterLink
+          to="/teaching"
+          class="nav-item"
+          :class="{ 'is-active': route.path === '/teaching' }"
+        >
+          分层教学
+        </RouterLink>
         <span class="nav-item is-disabled" title="P1 阶段开放">知识库</span>
         <span class="nav-item is-disabled" title="P4 阶段开放">报错诊断</span>
       </nav>

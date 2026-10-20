@@ -10,6 +10,12 @@ const router = createRouter({
       meta: { title: '首页' },
     },
     {
+      path: '/teaching',
+      name: 'teaching',
+      component: () => import('@/views/TeachingView.vue'),
+      meta: { title: '分层教学' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/',
     },
