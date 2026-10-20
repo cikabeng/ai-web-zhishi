@@ -14,7 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import health
+from app.api import health, teaching
 from app.core.config import get_settings
 
 logging.basicConfig(
@@ -61,6 +61,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api")
+app.include_router(teaching.router, prefix="/api")
 
 
 @app.exception_handler(RequestValidationError)
