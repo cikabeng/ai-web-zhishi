@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { toErrorMessage } from '@/api/client'
 import {
@@ -31,6 +32,7 @@ const question = ref('')
 const mode = ref<TeachingModeValue>('guided')
 const selectedCategory = ref<CategoryValue | null>(null)
 const categories = ref<CategoryMeta[]>([])
+const route = useRoute()
 
 const response = ref<TeachingResponse | null>(null)
 const loading = ref(false)
@@ -151,6 +153,12 @@ onMounted(async () => {
     categories.value = await fetchCategories()
   } catch {
     categories.value = []
+  }
+
+  // 演示/录屏用：/teaching?demo=1 自动载入演示问题并给出第一层提示
+  if (route.query.demo === '1') {
+    await loadDemo()
+    await ask(0, 1, 'open')
   }
 })
 </script>
