@@ -1,0 +1,36 @@
+:root {
+  /* 品牌色：蓝白教育 SaaS */
+  --c-brand-700: #1d4ed8;
+  --c-brand-600: #2563eb;
+  --c-brand-500: #3b82f6;
+  --c-brand-100: #dbeafe;
+  --c-brand-50: #eff6ff;
+
+  /* 文本与背景 */
+  --c-text-strong: #0f172a;
+  --c-text: #334155;
+  --c-text-muted: #64748b;
+  --c-text-subtle: #94a3b8;
+  --c-bg: #f8fafc;
+  --c-surface: #ffffff;
+  --c-border: #e2e8f0;
+
+  /* 语义色 */
+  --c-success: #15803d;
+  --c-success-bg: #ecfdf5;
+  --c-warn: #b45309;
+  --c-warn-bg: #fffbeb;
+  --c-danger: #b91c1c;
+  --c-danger-bg: #fef2f2;
+
+  /* 形状与阴影 */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  --font-sans: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Segoe UI', system-ui,
+    -apple-system, sans-serif;
+  --page-max: 1120px;
+}
