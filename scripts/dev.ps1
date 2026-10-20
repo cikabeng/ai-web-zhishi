@@ -11,6 +11,17 @@ if (-not (Test-Path $python)) {
     exit 1
 }
 
+# 中文日志与 Windows 控制台编码对齐，避免 uvicorn 日志乱码
+$env:PYTHONUTF8 = '1'
+$env:PYTHONIOENCODING = 'utf-8'
+
+# 把临时目录收敛到项目内：受限环境下 C:\...\Temp 可能不可写，
+# 且 esbuild / pip 都会用它。
+$tmp = Join-Path $root '.tmp'
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+$env:TEMP = $tmp
+$env:TMP = $tmp
+
 Write-Host "[1/2] 后端 -> http://127.0.0.1:8000  (文档 /api/docs)" -ForegroundColor Cyan
 Start-Process -FilePath $python `
     -ArgumentList '-m', 'uvicorn', 'app.main:app', '--reload', '--port', '8000' `
