@@ -1,0 +1,23 @@
+# 知实 AI · 后端依赖（P0）
+# 安装： .venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+
+# --- Web 框架 ---
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.32,<1.0
+python-multipart>=0.0.12
+
+# --- 校验与配置 ---
+pydantic>=2.9,<3.0
+pydantic-settings>=2.5,<3.0
+
+# --- HTTP 客户端（模型调用、测试）---
+httpx>=0.27,<1.0
+
+# --- 存储（P1 起使用）---
+sqlalchemy>=2.0,<3.0
+# 已在 Python 3.13.9 上验证可安装（1.5.9，含 onnxruntime 1.31）
+chromadb>=1.0,<2.0
+
+# --- 测试 ---
+pytest>=8.3,<9.0
+pytest-asyncio>=0.24,<1.0
