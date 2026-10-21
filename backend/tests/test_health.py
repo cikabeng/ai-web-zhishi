@@ -12,9 +12,9 @@ def test_health_ok(client: TestClient) -> None:
     data = response.json()
     assert data["status"] == "ok"
     assert data["name"] == "知实 AI"
-    assert isinstance(data["demo_mode"], bool)
-    # 演示模式必须与"是否配置了大模型"严格一致，不允许出现伪造状态
-    assert data["demo_mode"] is (not data["llm_configured"])
+    # conftest 强制 DEMO_MODE=on，保证测试不调用真实模型 API
+    assert data["demo_mode"] is True
+    assert isinstance(data["llm_configured"], bool)
     assert data["embed_provider"] in {"api", "hash"}
 
     # 知识库状态取决于本机是否已导入资料，这里只断言"状态与数字自洽"，
