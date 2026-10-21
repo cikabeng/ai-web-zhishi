@@ -1,4 +1,4 @@
-"""截图报错分析编排。
+﻿"""截图报错分析编排。
 
 复用现有链路，不另建问答系统：
     文本/OCR 结果 → 解析 → 分类 → 复用检索器（按分类路由）→ 复用教学引擎 L1/L2
@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 from app.errors.parser import parse_error
 from app.errors.schema import ErrorAnalysis, OcrResult, ParsedError, TeachingEntry
-from app.retrieval.keyword import get_retriever
+from app.retrieval.service import get_retriever
 from app.teaching.classifier import classify
 from app.teaching.engine import TeachingEngine
 from app.teaching.types import TeachingMode, TeachingRequest
@@ -224,3 +224,4 @@ class ErrorAnalyzer:
                 "ocr_labeled": "true" if ocr is not None else "not_applicable",
             },
         )
+

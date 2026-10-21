@@ -1,4 +1,4 @@
-"""分层教学引擎的 HTTP 接口。
+﻿"""分层教学引擎的 HTTP 接口。
 
 这里只做协议转换与默认检索的补齐，教学逻辑全部在 `app.teaching` 里，
 方便单独测试，也方便以后换成大模型生成而不用改接口。
@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.retrieval.keyword import get_retriever
+from app.retrieval.service import get_retriever
 from app.teaching.engine import TeachingEngine
 from app.teaching.types import (
     CATEGORY_DESCRIPTIONS,
@@ -106,3 +106,4 @@ def demo_case() -> dict[str, object]:
         "retrieval": [chunk.model_dump() for chunk in retrieval],
         "retriever": "keyword（临时：字面匹配，P1 换 Chroma 向量检索）",
     }
+

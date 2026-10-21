@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api import errors, health, teaching
+from app.api import errors, health, library, teaching
 from app.core.config import get_settings
 
 logging.basicConfig(
@@ -64,6 +64,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(teaching.router, prefix="/api")
 app.include_router(errors.router, prefix="/api")
+app.include_router(library.router, prefix="/api")
 
 
 @app.exception_handler(StarletteHTTPException)
