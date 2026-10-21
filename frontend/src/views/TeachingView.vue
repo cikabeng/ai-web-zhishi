@@ -245,7 +245,7 @@ onMounted(async () => {
       </section>
 
       <section class="card">
-        <HintLadder :level="response.level" :clamped="response.clamped" />
+        <HintLadder :level="response.level" :clamped="response.clamped" :reason="response.clamp_reason" />
       </section>
 
       <section class="card">

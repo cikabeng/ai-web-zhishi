@@ -33,7 +33,13 @@ const route = useRoute()
         >
           报错分析
         </RouterLink>
-        <span class="nav-item is-disabled" title="P1 阶段开放">知识库</span>
+        <RouterLink
+          to="/library"
+          class="nav-item"
+          :class="{ 'is-active': route.path === '/library' }"
+        >
+          知识库
+        </RouterLink>
       </nav>
     </header>
 

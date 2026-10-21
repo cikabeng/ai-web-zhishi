@@ -1,5 +1,11 @@
 <script setup lang="ts">
-const props = defineProps<{ level: number; clamped: boolean }>()
+import { computed } from 'vue'
+
+const props = defineProps<{
+  level: number
+  clamped: boolean
+  reason?: 'max_one_level_per_step' | 'guided_requires_attempt' | null
+}>()
 
 const steps = [
   { level: 1, name: '知识点提示' },
@@ -13,6 +19,13 @@ function stateOf(level: number): 'done' | 'current' | 'locked' {
   if (level === props.level) return 'current'
   return 'locked'
 }
+
+const clampText = computed(() => {
+  if (props.reason === 'guided_requires_attempt') {
+    return '引导模式下，进入 L3 前需要先提交一次自己的思路或代码片段。'
+  }
+  return '请求的层级超出了「一次只升一级」的限制，已回落到当前可用的层级。'
+})
 </script>
 
 <template>
@@ -26,9 +39,7 @@ function stateOf(level: number): 'done' | 'current' | 'locked' {
       <span class="dot">{{ step.level < props.level ? '✓' : step.level }}</span>
       <span class="name">{{ step.name }}</span>
     </div>
-    <p v-if="clamped" class="clamp-note">
-      请求的层级超出了「一次只升一级」的限制，已回落到当前可用的层级。
-    </p>
+    <p v-if="clamped" class="clamp-note">{{ clampText }}</p>
   </div>
 </template>
 

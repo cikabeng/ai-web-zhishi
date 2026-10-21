@@ -43,7 +43,7 @@ const kbLabel = computed(() => {
 
 const kbHint = computed(() => {
   const kb = health.value?.knowledge_base
-  if (!kb || kb.status === 'not_initialized') return 'P1 阶段接入文档入库'
+  if (!kb || kb.status === 'not_initialized') return '还没有资料，去「知识库」上传课程材料'
   return `${kb.documents} 篇文档 · ${kb.chunks} 个片段`
 })
 
@@ -133,7 +133,7 @@ onMounted(load)
       </div>
 
       <p class="panel-foot">
-        当前为 <strong>P0 骨架</strong>：接口与页面已连通，文档上传、检索与问答将在 P1–P3 依次接入。
+        当前为<strong>演示模式</strong>（未配置大模型）：检索与引用真实执行，回答由模板生成并明确标注。
         <a href="http://127.0.0.1:8000/api/docs" target="_blank" rel="noreferrer">查看后端接口文档 ↗</a>
       </p>
     </section>

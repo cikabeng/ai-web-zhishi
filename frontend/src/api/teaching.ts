@@ -52,6 +52,7 @@ export interface TeachingResponse {
   level_name: string
   level_intent: string
   clamped: boolean
+  clamp_reason: 'max_one_level_per_step' | 'guided_requires_attempt' | null
   blocks: HintBlock[]
   citations: Citation[]
   check_question: CheckQuestion

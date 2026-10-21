@@ -22,6 +22,12 @@ const router = createRouter({
       meta: { title: '报错分析' },
     },
     {
+      path: '/library',
+      name: 'library',
+      component: () => import('@/views/LibraryView.vue'),
+      meta: { title: '课程知识库' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/',
     },
