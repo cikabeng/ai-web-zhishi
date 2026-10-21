@@ -9,7 +9,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # 本文件位于 backend/app/core/config.py，向上四级即项目根目录
@@ -60,6 +60,12 @@ class Settings(BaseSettings):
     embed_model: str = "bge-m3"
     embed_dim: int = 1024
     embed_batch: int = 16
+
+    # ---------- 演示模式 ----------
+    # auto（默认）：没配大模型就走演示模式
+    # on：强制演示模式（即使配了 Key，用于现场 API 故障兜底）
+    # off：强制模型模式
+    demo_mode_setting: str = Field(default="auto", validation_alias="DEMO_MODE")
 
     # ---------- OCR / 图像 ----------
     ocr_provider: str = "auto"  # auto | rapidocr | vision | none
@@ -114,7 +120,12 @@ class Settings(BaseSettings):
 
     @property
     def demo_mode(self) -> bool:
-        """未配置大模型即演示模式：检索真实执行，回答由模板生成。"""
+        """演示模式：未配置大模型时自动开启，也可用 DEMO_MODE 强制开关。"""
+        setting = self.demo_mode_setting.strip().lower()
+        if setting in {"on", "true", "1", "yes"}:
+            return True
+        if setting in {"off", "false", "0", "no"}:
+            return False
         return not self.llm_configured
 
     @property
