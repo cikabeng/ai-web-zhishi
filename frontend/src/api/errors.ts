@@ -40,6 +40,14 @@ export interface TeachingEntry {
   level: number
 }
 
+export interface GeneralKnowledge {
+  label: string
+  pattern: string
+  summary: string
+  causes: string[]
+  steps: string[]
+}
+
 export interface ErrorAnalysis {
   source: 'image' | 'text'
   recognized_text: string
@@ -51,6 +59,8 @@ export interface ErrorAnalysis {
   explanation: string
   causes: string[]
   steps: string[]
+  general_knowledge: GeneralKnowledge | null
+  evidence_coverage: 'full' | 'partial' | 'none'
   citations: Citation[]
   retrieval: {
     query: string

@@ -33,6 +33,12 @@ const ocrAvailable = computed(() => {
   return !!active && active !== 'none'
 })
 
+function coverageLabel(coverage: 'full' | 'partial' | 'none'): string {
+  if (coverage === 'full') return '完整'
+  if (coverage === 'partial') return '部分'
+  return '未覆盖'
+}
+
 const parsedRows = computed(() => {
   const parsed = analysis.value?.parsed
   if (!parsed) return []
@@ -287,6 +293,9 @@ onBeforeUnmount(revokePreview)
         <h3 class="card-title">解析结果</h3>
         <p class="muted small">
           项目分类：{{ analysis.category_label }} · 检索命中 {{ analysis.retrieval.hit_count }} 条
+          <span class="badge-coverage" :class="`cov-${analysis.evidence_coverage}`">
+            资料覆盖：{{ coverageLabel(analysis.evidence_coverage) }}
+          </span>
           <span v-if="analysis.parsed.line_estimated" class="badge-warn">行号来自识别，可能不准</span>
         </p>
         <dl class="parsed-grid">
@@ -300,6 +309,16 @@ onBeforeUnmount(revokePreview)
 
       <section class="card">
         <h3 class="card-title">错误解释</h3>
+
+        <el-alert
+          v-if="analysis.general_knowledge"
+          :title="`课程资料没有覆盖这条具体报错：下面的「可能原因 / 排查步骤」来自${analysis.general_knowledge.label}，不引用教材。`"
+          type="info"
+          :closable="false"
+          show-icon
+          class="coverage-alert"
+        />
+
         <div class="md" v-html="renderMarkdown(analysis.explanation)" />
 
         <h4 class="sub-title">可能原因</h4>
@@ -587,6 +606,33 @@ onBeforeUnmount(revokePreview)
   color: var(--c-warn);
   font-size: 11.5px;
   font-weight: 600;
+}
+
+.badge-coverage {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.badge-coverage.cov-full {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.badge-coverage.cov-partial {
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+
+.badge-coverage.cov-none {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}
+
+.coverage-alert {
+  margin: 10px 0 4px;
 }
 
 .code-block {
