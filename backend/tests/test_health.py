@@ -16,7 +16,15 @@ def test_health_ok(client: TestClient) -> None:
     # 演示模式必须与"是否配置了大模型"严格一致，不允许出现伪造状态
     assert data["demo_mode"] is (not data["llm_configured"])
     assert data["embed_provider"] in {"api", "hash"}
-    assert data["knowledge_base"]["status"] == "not_initialized"
+
+    # 知识库状态取决于本机是否已导入资料，这里只断言"状态与数字自洽"，
+    # 不把测试绑死在某个具体环境上。
+    knowledge = data["knowledge_base"]
+    assert knowledge["status"] in {"not_initialized", "ready"}
+    if knowledge["status"] == "ready":
+        assert knowledge["documents"] > 0
+    else:
+        assert knowledge["documents"] == 0
 
 
 def test_health_does_not_leak_secrets(client: TestClient) -> None:

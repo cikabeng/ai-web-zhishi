@@ -57,13 +57,31 @@ def test_hint_cannot_skip_levels(client: TestClient) -> None:
 def test_hint_level4_is_labelled(client: TestClient) -> None:
     response = client.post(
         "/api/teaching/hint",
-        json={"question": DEMO_QUESTION, "current_level": 3, "target_level": 4},
+        json={"question": DEMO_QUESTION, "current_level": 3, "target_level": 4, "mode": "study"},
     )
     data = response.json()
     assert data["level"] == 4
     assert data["example_generated"] is True
     example = next(block for block in data["blocks"] if block["kind"] == "example")
     assert "AI 生成示例" in example["title"]
+
+
+def test_guided_mode_clamps_level3_without_attempt(client: TestClient) -> None:
+    response = client.post(
+        "/api/teaching/hint",
+        json={"question": DEMO_QUESTION, "current_level": 2, "target_level": 3, "mode": "guided"},
+    )
+    data = response.json()
+    assert data["level"] == 2
+    assert data["clamp_reason"] == "guided_requires_attempt"
+
+
+def test_study_mode_reaches_level3_without_attempt(client: TestClient) -> None:
+    response = client.post(
+        "/api/teaching/hint",
+        json={"question": DEMO_QUESTION, "current_level": 2, "target_level": 3, "mode": "study"},
+    )
+    assert response.json()["level"] == 3
 
 
 def test_feedback_on_submission(client: TestClient) -> None:

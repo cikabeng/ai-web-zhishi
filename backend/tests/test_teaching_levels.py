@@ -12,6 +12,7 @@ from app.teaching.guards import code_line_count, detect_complete_implementation
 from app.teaching.types import (
     ProblemCategory,
     RetrievedChunk,
+    StudentSubmission,
     TeachingMode,
     TeachingRequest,
 )
@@ -43,7 +44,8 @@ engine = TeachingEngine()
 def make_request(**overrides) -> TeachingRequest:
     payload = {
         "question": QUESTION,
-        "mode": TeachingMode.guided,
+        # 层级机制用学习模式测试；引导模式的额外约束单独测
+        "mode": TeachingMode.study,
         "current_level": 0,
         "target_level": 1,
         "retrieval": CHUNKS,
@@ -207,6 +209,31 @@ def test_guided_and_study_differ() -> None:
     guided_notes = " ".join(block.content for block in guided.blocks if block.kind == "note")
     study_notes = " ".join(block.content for block in study.blocks if block.kind == "note")
     assert guided_notes != study_notes
+
+
+def test_guided_mode_blocks_level3_without_attempt() -> None:
+    blocked = engine.respond(make_request(mode=TeachingMode.guided, current_level=2, target_level=3))
+    assert blocked.level == 2, "引导模式下未提交尝试不允许进入 L3"
+    assert blocked.clamp_reason == "guided_requires_attempt"
+    assert any("提交尝试" in block.title for block in blocked.blocks)
+
+
+def test_guided_mode_allows_level3_after_attempt() -> None:
+    submitted = engine.respond(
+        make_request(
+            mode=TeachingMode.guided,
+            current_level=2,
+            target_level=3,
+            submission=StudentSubmission(kind="thinking", text="我怀疑 info 是 None，因为函数没有返回值"),
+        )
+    )
+    assert submitted.level == 3
+    assert submitted.clamp_reason is None
+
+
+def test_study_mode_allows_level3_without_attempt() -> None:
+    response = engine.respond(make_request(mode=TeachingMode.study, current_level=2, target_level=3))
+    assert response.level == 3
 
 
 # ---------------------------------------------------------------- 分类可覆盖
