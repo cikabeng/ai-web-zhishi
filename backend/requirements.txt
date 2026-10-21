@@ -18,6 +18,12 @@ sqlalchemy>=2.0,<3.0
 # 已在 Python 3.13.9 上验证可安装（1.5.9，含 onnxruntime 1.31）
 chromadb>=1.0,<2.0
 
+# --- 截图报错分析 ---
+# Pillow：图片格式校验、缩放
+pillow>=11.0
+# 本地 OCR：离线可用，onnxruntime 已由 chromadb 带入
+rapidocr-onnxruntime>=1.2,<2.0
+
 # --- 测试 ---
 pytest>=8.3,<9.0
 pytest-asyncio>=0.24,<1.0

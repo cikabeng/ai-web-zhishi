@@ -26,9 +26,9 @@
 | 前后端骨架、配置、CORS | ✅ 已完成 | FastAPI + Vue 3，`/api/health` 健康检查 |
 | **分层教学引擎** | ✅ 已完成 | 六类问题分类、四级提示、安全护栏、提交反馈 |
 | 教学页面 | ✅ 已完成 | 分类可手动调整、层级阶梯、引用卡片、四种状态 |
+| **截图报错分析** | ✅ 已完成 | 本地 OCR / 视觉模型双通道、识别可编辑、复用检索与教学引擎 |
 | 文档入库（PDF/DOCX/TXT/MD） | 🚧 进行中（P1） | 解析、分块、向量化、Chroma 持久化 |
 | RAG 问答与聊天页 | 🚧 待开发（P2/P3） | 检索 + 引用 + 拒答 |
-| 报错诊断页 | 🚧 待开发（P4） | 目前仅文本诊断能力已含在教学引擎中 |
 
 > 检索现状：`backend/app/retrieval/keyword.py` 是**临时关键词检索**（IDF + 分类路由），用于先把教学链路跑通。
 > P1 会替换为 Chroma 向量检索，接口签名不变，教学引擎无需改动。
@@ -54,6 +54,22 @@
 
 ---
 
+## 截图报错分析
+
+![截图报错分析页面](docs/assets/errors-demo.png)
+
+上传报错截图 → 服务端校验格式与大小 → OCR 识别 → 解析异常类型/文件/行号/代码片段 → 复用同一套检索与教学引擎给出解释、可能原因、排查步骤和教材引用。
+
+- **识别结果可编辑**：改完点「用修正后的内容重新分析」，用修正后的文本重新检索。
+- **不把猜测当事实**：截图来源的行号一律标记 `line_estimated`，界面显示"识别，可能不准"。
+- **双通道**：配置了 `VLM_*` 走视觉模型；否则用本地 rapidocr；都没有则返回 503 并引导到手动粘贴。
+- **两条入口**：上传图片 或 直接粘贴报错文本，下游分析完全一致。
+- **不执行代码**：只做文字解析，`safety.code_execution = disabled`。
+
+详细设计见 [docs/05-截图报错分析.md](docs/05-截图报错分析.md)。
+
+---
+
 ## 技术栈
 
 | 层 | 选型 |
@@ -61,6 +77,7 @@
 | 前端 | Vue 3 + Vite 6 + TypeScript + Element Plus + Pinia + markdown-it + DOMPurify |
 | 后端 | Python 3.13 + FastAPI + Pydantic v2 + SQLAlchemy |
 | 知识库 | ChromaDB（P1 接入）+ 文档解析 + 文本分块 + Embedding |
+| 截图识别 | 本地 rapidocr-onnxruntime / OpenAI 兼容视觉模型 + Pillow 校验 |
 | 测试 | pytest（后端）、`vue-tsc` + `vite build`（前端） |
 
 ---
@@ -121,6 +138,15 @@ npm run dev
 
 或在浏览器打开 <http://localhost:5173/teaching?demo=1>（自动载入演示问题并给出 L1）。
 
+### 5. 看截图报错分析
+
+```powershell
+# 命令行演示：真实本地 OCR + 解析 + 检索
+.\.venv\Scripts\python.exe scripts\demo_errors.py
+```
+
+或在浏览器打开 <http://localhost:5173/errors?demo=1>（自动载入示例截图并完成一次分析）。
+
 ---
 
 ## 配置
@@ -136,6 +162,8 @@ cp .env.example .env
 | `LLM_API_KEY` | 留空 → 自动进入**演示模式**：检索真实执行，回答由模板生成，界面明确标注 |
 | `EMBED_PROVIDER` | 留空时：配了 `EMBED_API_KEY` 走远程向量模型，否则用本地 `hash` 向量 |
 | `RETRIEVAL_MIN_SCORE` | 检索阈值，低于该值视为"资料不足" |
+| `OCR_PROVIDER` | `auto`（默认）/ `vision` / `rapidocr` / `none`；决定截图识别走哪条通道 |
+| `VLM_BASE_URL` / `VLM_API_KEY` / `VLM_MODEL` | 视觉模型配置；三项齐全才启用远程 OCR，未配置时自动回落到本地 rapidocr |
 
 所有密钥只放后端环境变量，前端拿不到；`/api/health` 只返回布尔值，不回显密钥。
 
@@ -171,7 +199,7 @@ cd backend
 ..\.venv\Scripts\python.exe -m pytest -q
 ```
 
-当前 **58 个用例**，覆盖：六类分类、四级提示的格式约束（L1/L2 无代码、L3 ≤6 行、L4 必带 AI 标记）、跳级拦截、资料不足、输入清洗、泄露收敛、接口协议。
+当前 **83 个用例**，覆盖：六类分类、四级提示的格式约束（L1/L2 无代码、L3 ≤6 行、L4 必带 AI 标记）、跳级拦截、资料不足、输入清洗、泄露收敛、接口协议，以及截图分析的图片校验、OCR 后处理与各类失败状态。
 
 前端：
 
@@ -196,7 +224,7 @@ npm run build     # 内含 vue-tsc 类型检查
 - **P1** 文档入库：PDF / DOCX / TXT / Markdown → 解析 → 分块 → 向量化 → Chroma
 - **P2** RAG 问答：检索 + 引用 + 拒答 + 流式输出
 - **P3** 聊天界面与知识库管理页
-- **P4** 报错诊断页（截图 OCR 视情况延后）
+- **P4** 报错诊断增强（多帧定位、批量截图）
 - **P5** 评测集与指标看板
 
 详细计划见 [PLAN.md](PLAN.md)。
@@ -209,5 +237,6 @@ npm run build     # 内含 vue-tsc 类型检查
 |---|---|
 | [PLAN.md](PLAN.md) | 完整开发计划、架构与风险 |
 | [docs/04-分层教学引擎.md](docs/04-分层教学引擎.md) | 教学引擎设计、约束与测试 |
+| [docs/05-截图报错分析.md](docs/05-截图报错分析.md) | OCR 通道、图片校验、字段解析与复用链路 |
 | [docs/03-本地开发环境备忘.md](docs/03-本地开发环境备忘.md) | 环境配置与常见错误对照 |
 | [docs/00-环境勘察报告.md](docs/00-环境勘察报告.md) | 本机环境勘察与 Git 安装记录 |
