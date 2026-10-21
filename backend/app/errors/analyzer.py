@@ -1,4 +1,4 @@
-﻿"""截图报错分析编排。
+"""截图报错分析编排。
 
 复用现有链路，不另建问答系统：
     文本/OCR 结果 → 解析 → 分类 → 复用检索器（按分类路由）→ 复用教学引擎 L1/L2
@@ -10,11 +10,12 @@ import re
 from urllib.parse import quote
 
 from app.errors.parser import parse_error
-from app.errors.schema import ErrorAnalysis, OcrResult, ParsedError, TeachingEntry
+from app.errors.schema import ErrorAnalysis, GeneralKnowledge, OcrResult, ParsedError, TeachingEntry
+from app.knowledge.general import GENERAL_LABEL, GeneralDiagnosis, diagnose_error
 from app.retrieval.service import get_retriever
 from app.teaching.classifier import classify
 from app.teaching.engine import TeachingEngine
-from app.teaching.types import TeachingMode, TeachingRequest
+from app.teaching.types import Citation, TeachingMode, TeachingRequest, RetrievedChunk
 
 _CAUSE_TABLE: list[tuple[tuple[str, ...], list[str]]] = [
     (
@@ -138,6 +139,35 @@ def _first_block(blocks, kind: str):
     return next((block for block in blocks if block.kind == kind), None)
 
 
+def evidence_coverage(
+    diagnosis: GeneralDiagnosis | None,
+    chunks: list[RetrievedChunk],
+    citations: list[Citation],
+) -> str:
+    """资料到底有没有讲这条报错：full / partial / none。
+
+    只按分数判"有依据"是不够的：一条讲 NoneType 的资料对 int+str 也是"沾边"，
+    但根本没覆盖具体报错，这时必须把结论降级为通用知识。
+    """
+    if not citations:
+        return "none"
+    if diagnosis is None:
+        return "partial"
+    cited_ids = {citation.chunk_id for citation in citations}
+    haystack = " ".join(chunk.text for chunk in chunks if chunk.chunk_id in cited_ids).lower()
+    return "full" if diagnosis.marker in haystack else "partial"
+
+
+def build_general(diagnosis: GeneralDiagnosis) -> GeneralKnowledge:
+    return GeneralKnowledge(
+        label=GENERAL_LABEL,
+        pattern=diagnosis.pattern,
+        summary=diagnosis.summary,
+        causes=diagnosis.causes,
+        steps=diagnosis.steps,
+    )
+
+
 def _steps_from(blocks) -> list[str]:
     block = _first_block(blocks, "steps")
     if block is None:
@@ -181,6 +211,10 @@ class ErrorAnalyzer:
         explanation = explain.content if explain else ""
         steps = _steps_from(level2.blocks)
 
+        diagnosis = diagnose_error(parsed.message or "", parsed.exception_type)
+        coverage = evidence_coverage(diagnosis, chunks, level1.citations)
+        general = build_general(diagnosis) if diagnosis and coverage != "full" else None
+
         warnings: list[str] = []
         if source == "image" and not edited:
             warnings.append("以下文字由截图识别得到，行号、变量名与缩进可能不准，请核对后再采信。")
@@ -189,7 +223,18 @@ class ErrorAnalyzer:
         if parsed.missing:
             warnings.append("未能识别：" + "、".join(parsed.missing) + "。可以手动补充后再分析。")
         if level1.insufficient_evidence:
-            warnings.append("知识库中没有检索到直接相关的课程资料，下面的解释属于通用知识。")
+            if general is not None:
+                warnings.append(
+                    "知识库中没有直接相关的课程资料；下面的原因与步骤来自通用 Python 知识，不引用教材。"
+                )
+            else:
+                warnings.append("知识库中没有检索到直接相关的课程资料，下面的解释属于通用知识。")
+        elif coverage != "full" and general is not None:
+            warnings.append(
+                "课程资料没有直接覆盖这条具体报错；下面的「通用 Python 知识」部分不引用教材，请以课堂要求为准。"
+            )
+        elif coverage != "full":
+            warnings.append("课程资料只覆盖了同类问题，这条具体报错的原因未能从资料中确认。")
 
         teaching_question = text.strip()[:500] or query
         teaching_entry = TeachingEntry(
@@ -197,6 +242,18 @@ class ErrorAnalyzer:
             path=f"/teaching?question={quote(teaching_question, safe='')}",
             level=1,
         )
+
+        # 原因优先用"按报错模式匹配到的具体原因"，而不是泛泛的兜底文案
+        causes = diagnosis.causes if diagnosis else causes_for(parsed)
+        # 步骤：资料没覆盖时用模式化的具体步骤；覆盖时优先用模型给的（更贴合上下文）
+        if diagnosis and coverage != "full":
+            resolved_steps = diagnosis.steps
+        elif level2.llm_status == "model" and steps:
+            resolved_steps = steps
+        elif diagnosis and diagnosis.steps:
+            resolved_steps = diagnosis.steps
+        else:
+            resolved_steps = steps
 
         return ErrorAnalysis(
             source="image" if source == "image" else "text",
@@ -207,14 +264,17 @@ class ErrorAnalyzer:
             category=classification.category.value,
             category_label=classification.label,
             explanation=explanation,
-            causes=causes_for(parsed),
-            steps=steps,
+            causes=causes,
+            steps=resolved_steps,
+            general_knowledge=general,
+            evidence_coverage=coverage,
             citations=level1.citations,
             retrieval={
                 "query": query,
                 "hit_count": len(chunks),
                 "sufficient": not level1.insufficient_evidence,
-                "retriever": "keyword（临时实现）",
+                "coverage": coverage,
+                "retriever": "library-first",
             },
             teaching_entry=teaching_entry,
             warnings=warnings,

@@ -44,6 +44,35 @@ TRUSTED_RETRIEVAL_SCORE = 0.30
 def _trusted_text(chunks: list[RetrievedChunk]) -> str:
     return "\n".join(chunk.text for chunk in chunks if chunk.score >= TRUSTED_RETRIEVAL_SCORE)
 
+
+def _general_block(question: str, chunks: list[RetrievedChunk], citations) -> HintBlock | None:
+    """资料没覆盖这条具体报错时，补一段明确标注的通用 Python 知识。
+
+    这一段不产生任何引用编号，标题里写明"非课程资料"，避免与教材结论混淆。
+    """
+    from app.knowledge.general import GENERAL_LABEL, diagnose_error
+
+    diagnosis = diagnose_error(question)
+    if diagnosis is None:
+        return None
+
+    cited_ids = {citation.chunk_id for citation in citations}
+    haystack = " ".join(chunk.text for chunk in chunks if chunk.chunk_id in cited_ids).lower()
+    if diagnosis.marker in haystack:
+        return None
+
+    lines = [f"**通用理解**：{diagnosis.summary}", "", "**常见原因**"]
+    lines += [f"- {cause}" for cause in diagnosis.causes]
+    lines += ["", "**建议步骤**"]
+    lines += [f"{index}. {step}" for index, step in enumerate(diagnosis.steps, start=1)]
+
+    return HintBlock(
+        kind="note",
+        title=GENERAL_LABEL,
+        content="\n".join(lines),
+        meta={"source": "general", "pattern": diagnosis.pattern},
+    )
+
 # 每类问题在提交反馈里期待出现的关键词（用于判断"有没有抓住重点"）
 _FEEDBACK_KEYWORDS: dict[ProblemCategory, list[str]] = {
     ProblemCategory.error: ["none", "return", "print", "type(", "repr(", "is none", "报错", "赋值", "返回"],
@@ -189,6 +218,16 @@ class TeachingEngine:
             insufficient=insufficient,
             example=example,
         )
+
+        # L1：如果资料只"沾边"、没真正讲到这条报错，补一段明确标注的通用知识
+        if level == 1:
+            general = _general_block(question, request.retrieval, citations)
+            if general is not None:
+                insert_at = max(
+                    (index for index, block in enumerate(blocks) if block.kind == "note"),
+                    default=len(blocks),
+                )
+                blocks.insert(insert_at, general)
         # 配置了模型时，用模型润色 L1–L3 的讲解；失败一律回退模板
         llm_status = "template"
         llm_model: str | None = None

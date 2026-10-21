@@ -55,6 +55,16 @@ class TeachingEntry(BaseModel):
     level: int = 1
 
 
+class GeneralKnowledge(BaseModel):
+    """课程资料没覆盖时的通用诊断。必须带 label，不能冒充教材。"""
+
+    label: str = "通用 Python 知识（非课程资料）"
+    pattern: str
+    summary: str
+    causes: list[str]
+    steps: list[str]
+
+
 class ErrorAnalysis(BaseModel):
     source: Literal["image", "text"]
     recognized_text: str
@@ -67,6 +77,8 @@ class ErrorAnalysis(BaseModel):
     explanation: str
     causes: list[str]
     steps: list[str]
+    general_knowledge: GeneralKnowledge | None = None
+    evidence_coverage: Literal["full", "partial", "none"] = "none"
     citations: list[Citation]
     retrieval: dict[str, object]
     teaching_entry: TeachingEntry
