@@ -187,7 +187,30 @@ Copy-Item .env.example .env
 
 ### 5.3 API 不可用时的降级
 
-- 未配置 Key：自动进入演示模式，检索照常执行，界面明确标注；
+**现场模型 API 挂了怎么办**——强制切到演示模式（检索仍然真实执行，界面会显示黄色横幅）：
+
+```powershell
+# 方式一：临时环境变量（当前窗口有效）
+$env:DEMO_MODE = "on"
+cd backend
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+```
+
+```ini
+# 方式二：写进 .env，永久生效
+DEMO_MODE=on
+```
+
+改完重启后端，确认：
+
+```powershell
+curl.exe -s http://127.0.0.1:8000/api/health
+# 期望："demo_mode":true
+```
+
+页面顶部会出现「演示模式 · 未配置大模型：检索与引用真实执行，回答由模板生成并已明确标注」的横幅。
+
+- 未配置 Key：自动进入演示模式，检索照常执行；
 - 视觉模型调用失败：截图分析返回 422 并提示改用手动粘贴；
 - 以上都不影响教学、检索、引用这些核心能力。
 

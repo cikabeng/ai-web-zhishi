@@ -1,4 +1,4 @@
-﻿# 知实 AI（EduRAG）
+# 知实 AI（EduRAG）
 
 > 高校软件工程实训智能答疑知识库 —— 只依据课程资料作答，并给出可核对的引用；资料里没有的，它会直接说没有。
 
@@ -191,6 +191,7 @@ cp .env.example .env
 | 变量 | 说明 |
 |---|---|
 | `LLM_API_KEY` | 留空 → 自动进入**演示模式**：检索真实执行，回答由模板生成，界面明确标注 |
+| `DEMO_MODE` | `auto`（默认）/ `on` / `off`；现场模型 API 故障时设为 `on` 强制演示模式 |
 | `EMBED_PROVIDER` | 留空时：配了 `EMBED_API_KEY` 走远程向量模型，否则用本地 `hash` 向量 |
 | `RETRIEVAL_MIN_SCORE` | 检索阈值，低于该值视为"资料不足" |
 | `OCR_PROVIDER` | `auto`（默认）/ `vision` / `rapidocr` / `none`；决定截图识别走哪条通道 |
