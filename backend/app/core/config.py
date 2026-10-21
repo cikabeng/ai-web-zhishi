@@ -61,6 +61,17 @@ class Settings(BaseSettings):
     embed_dim: int = 1024
     embed_batch: int = 16
 
+    # ---------- OCR / 图像 ----------
+    ocr_provider: str = "auto"  # auto | rapidocr | vision | none
+    ocr_max_image_mb: int = 8
+    ocr_max_side: int = 1600
+    ocr_timeout: int = 60
+
+    # ---------- 视觉模型（可选，支持图像输入时才生效）----------
+    vlm_base_url: str = ""
+    vlm_api_key: str = ""
+    vlm_model: str = ""
+
     # ---------- 检索 ----------
     retrieval_top_k: int = 6
     retrieval_min_score: float = 0.30
@@ -105,6 +116,15 @@ class Settings(BaseSettings):
     def demo_mode(self) -> bool:
         """未配置大模型即演示模式：检索真实执行，回答由模板生成。"""
         return not self.llm_configured
+
+    @property
+    def vlm_configured(self) -> bool:
+        """三项齐全才认为视觉模型可用。"""
+        return bool(self.vlm_api_key.strip() and self.vlm_base_url.strip() and self.vlm_model.strip())
+
+    @property
+    def ocr_max_bytes(self) -> int:
+        return self.ocr_max_image_mb * 1024 * 1024
 
     @property
     def upload_max_bytes(self) -> int:

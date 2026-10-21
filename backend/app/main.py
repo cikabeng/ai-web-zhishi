@@ -13,8 +13,9 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api import health, teaching
+from app.api import errors, health, teaching
 from app.core.config import get_settings
 
 logging.basicConfig(
@@ -62,6 +63,21 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(teaching.router, prefix="/api")
+app.include_router(errors.router, prefix="/api")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    """把 HTTPException 也整理成 {code,message}，前端只处理一种错误结构。"""
+    detail = exc.detail
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "code": f"http_{exc.status_code}",
+            "message": detail if isinstance(detail, str) else str(detail),
+            "detail": None,
+        },
+    )
 
 
 @app.exception_handler(RequestValidationError)
