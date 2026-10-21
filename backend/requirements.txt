@@ -18,6 +18,12 @@ sqlalchemy>=2.0,<3.0
 # 已在 Python 3.13.9 上验证可安装（1.5.9，含 onnxruntime 1.31）
 chromadb>=1.0,<2.0
 
+# --- 文档解析 ---
+# PDF：保留页码
+pymupdf>=1.24
+# DOCX：保留标题层级
+python-docx>=1.1
+
 # --- 截图报错分析 ---
 # Pillow：图片格式校验、缩放
 pillow>=11.0

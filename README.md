@@ -24,14 +24,30 @@
 | 模块 | 状态 | 说明 |
 |---|---|---|
 | 前后端骨架、配置、CORS | ✅ 已完成 | FastAPI + Vue 3，`/api/health` 健康检查 |
+| **课程知识库** | ✅ 已完成 | PDF/DOCX/TXT/MD 上传、解析、分块、Chroma 持久化索引、删除同步清向量 |
 | **分层教学引擎** | ✅ 已完成 | 六类问题分类、四级提示、安全护栏、提交反馈 |
 | 教学页面 | ✅ 已完成 | 分类可手动调整、层级阶梯、引用卡片、四种状态 |
 | **截图报错分析** | ✅ 已完成 | 本地 OCR / 视觉模型双通道、识别可编辑、复用检索与教学引擎 |
-| 文档入库（PDF/DOCX/TXT/MD） | 🚧 进行中（P1） | 解析、分块、向量化、Chroma 持久化 |
-| RAG 问答与聊天页 | 🚧 待开发（P2/P3） | 检索 + 引用 + 拒答 |
+| RAG 问答聊天页 | 🚧 待开发（P2） | 当前问答能力通过教学页与报错分析页提供 |
 
-> 检索现状：`backend/app/retrieval/keyword.py` 是**临时关键词检索**（IDF + 分类路由），用于先把教学链路跑通。
-> P1 会替换为 Chroma 向量检索，接口签名不变，教学引擎无需改动。
+> 检索现状：`backend/app/retrieval/service.py` 是**混合检索**——优先查知识库（Chroma 哈希向量 + 字面覆盖率的加权分数），不足时回落到内置示例资料的词面检索。
+> 两套检索返回同一数据结构，教学引擎与报错分析无需感知差异。
+
+---
+
+## 课程知识库
+
+![课程知识库页面](docs/assets/library.png)
+
+- **支持 PDF / DOCX / TXT / Markdown**，单文件上限 20 MB（可配）
+- **按内容 sha256 去重**：同一份文件重复上传不会产生重复索引
+- **解析失败如实上报**：扫描版 PDF、空文件、编码异常都会在列表里显示具体原因
+- **删除同步清理向量**：删文档会同时删 Chroma 里的块，不会"删了还能检索到"
+- **可重建索引**：改了 `.env` 或怀疑索引损坏时点「重建」
+- **分块预览**：能看到实际切出来的片段与页码，便于核对解析质量
+- 首页与 `/api/health` 的知识库状态（文档数 / 片段数）来自真实登记表
+
+索引结构：Chroma 持久化目录 `storage/chroma`，集合 `library_chunks_v1`，离线哈希向量（512 维）+ 字面覆盖率加权排序，不需要 GPU 与外网。
 
 ---
 
@@ -123,13 +139,28 @@ npm run dev
 
 打开 <http://localhost:5173>。前端通过 Vite 代理访问 `/api`，无需额外配置跨域。
 
-### 3. 一键启动（Windows）
+### 3. 导入演示资料（必须做一次）
+
+```powershell
+.\.venv\Scripts\python.exe scripts\seed_demo.py
+```
+
+会把 `backend/data/samples` 下的 3 份课程资料走**真实上传链路**导入知识库（解析 → 分块 → 建索引）。
+
+### 4. 一键启动（Windows）
 
 ```powershell
 .\scripts\dev.ps1
 ```
 
-### 4. 看分层教学效果
+### 5. 自检演示用例
+
+```powershell
+# 5 个标准问题，输出 PASS / FAIL，全部通过才算演示环境就绪
+.\.venv\Scripts\python.exe scripts\check_demo.py
+```
+
+### 6. 看分层教学效果
 
 ```powershell
 # 命令行演示：同一道 Python 报错 L1 → L4
@@ -138,7 +169,7 @@ npm run dev
 
 或在浏览器打开 <http://localhost:5173/teaching?demo=1>（自动载入演示问题并给出 L1）。
 
-### 5. 看截图报错分析
+### 7. 看截图报错分析
 
 ```powershell
 # 命令行演示：真实本地 OCR + 解析 + 检索
@@ -174,20 +205,24 @@ cp .env.example .env
 ```
 backend/
   app/
-    api/            HTTP 路由（health / teaching）
+    api/            HTTP 路由（health / teaching / errors / library）
     core/           配置、日志
+    library/        知识库：解析、分块、Chroma 索引、文档登记
     teaching/       分层教学引擎（分类、四级提示、护栏）
-    retrieval/      检索（临时关键词实现）
+    retrieval/      混合检索（知识库优先 + 示例资料兜底）
+    errors/         截图报错分析（校验、OCR、解析、编排）
     models/         Pydantic 契约
-  data/samples/     示例课程资料
-  tests/            pytest 用例
+  data/
+    samples/        3 份示例课程资料
+    demo_cases.json 5 个标准问题与预期结果
+  tests/            pytest 用例（99 个）
 frontend/
   src/
     api/            接口客户端与类型
-    views/          首页、分层教学页
+    views/          首页、分层教学、报错分析、课程知识库
     components/     分类选择、层级阶梯等
-docs/               设计说明与环境备忘
-scripts/            开发脚本与演示脚本
+docs/               设计说明、截图与环境备忘
+scripts/            dev / seed / check / demo 脚本
 ```
 
 ---
@@ -199,7 +234,13 @@ cd backend
 ..\.venv\Scripts\python.exe -m pytest -q
 ```
 
-当前 **83 个用例**，覆盖：六类分类、四级提示的格式约束（L1/L2 无代码、L3 ≤6 行、L4 必带 AI 标记）、跳级拦截、资料不足、输入清洗、泄露收敛、接口协议，以及截图分析的图片校验、OCR 后处理与各类失败状态。
+当前 **99 个用例**，覆盖：知识库上传/去重/删除/重建/失败状态、混合检索、六类分类、四级提示的格式约束（L1/L2 无代码、L3 ≤6 行、L4 必带 AI 标记）、跳级拦截、引导模式需提交尝试、资料不足、输入清洗、泄露收敛、接口协议，以及截图分析的图片校验、OCR 后处理与各类失败状态。
+
+演示用例（5 个标准问题，带预期结果）：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\check_demo.py
+```
 
 前端：
 
@@ -210,20 +251,59 @@ npm run build     # 内含 vue-tsc 类型检查
 
 ---
 
+## 部署
+
+### 本地演示（推荐）
+
+```powershell
+.\scripts\dev.ps1
+```
+
+后端 8000（uvicorn）+ 前端 5173（Vite），SQLite/Chroma 数据都在 `storage/`，无需数据库服务。
+
+### 单机长期运行
+
+```powershell
+# 后端
+cd backend
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+# 前端静态构建
+cd ..\frontend
+npm run build
+```
+
+`dist/` 用 Nginx 指向，并把 `/api` 反向代理到 `127.0.0.1:8000`（避免跨域问题）。示例 Nginx 片段：
+
+```nginx
+server {
+    listen 80;
+    root /path/to/frontend/dist;
+    location / { try_files $uri $uri/ /index.html; }
+    location /api/ { proxy_pass http://127.0.0.1:8000; }
+}
+```
+
+### 注意事项
+
+- 只支持单 worker：Chroma 是本地文件库，多进程会有锁竞争
+- `storage/` 需持久化（文档、索引、登记表都在里面）
+- 未配置模型 API 时自动进入演示模式，功能仍完整可用
+
 ## 已知限制
 
 1. 提示文案由模板生成（未接大模型），措辞固定、不会因人而异。接入模型后仍会保留同一套结构化输出与护栏。
 2. L4 例题来自固定题库（每类 2 道），"换一种解释"会循环。
 3. 提交反馈基于关键词判定，只能给方向性提示，不判断代码是否正确（这是"不执行用户代码"的代价）。
-4. 检索为临时关键词实现，字面匹配，同义改写会漏检。
+4. 检索用离线哈希向量（词面相似度，不是语义模型），同义改写仍可能漏检；接入 Embedding API 后可按同一接口替换。
+5. 扫描版 PDF 没有文本层，会在列表里标记失败并说明原因，需要先 OCR。
 
 ---
 
 ## 路线图
 
-- **P1** 文档入库：PDF / DOCX / TXT / Markdown → 解析 → 分块 → 向量化 → Chroma
-- **P2** RAG 问答：检索 + 引用 + 拒答 + 流式输出
-- **P3** 聊天界面与知识库管理页
+- **P1** ✅ 文档入库：PDF / DOCX / TXT / Markdown → 解析 → 分块 → Chroma 索引
+- **P2** RAG 问答：接入大模型生成 + 流式输出（当前为模板化回答）
+- **P3** 独立聊天界面（当前问答通过教学页与报错分析页提供）
 - **P4** 报错诊断增强（多帧定位、批量截图）
 - **P5** 评测集与指标看板
 
@@ -235,6 +315,8 @@ npm run build     # 内含 vue-tsc 类型检查
 
 | 文档 | 内容 |
 |---|---|
+| [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | 2 分钟现场演示脚本、讲解词、翻车预案 |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | 常见错误、原因与处理 |
 | [PLAN.md](PLAN.md) | 完整开发计划、架构与风险 |
 | [docs/04-分层教学引擎.md](docs/04-分层教学引擎.md) | 教学引擎设计、约束与测试 |
 | [docs/05-截图报错分析.md](docs/05-截图报错分析.md) | OCR 通道、图片校验、字段解析与复用链路 |

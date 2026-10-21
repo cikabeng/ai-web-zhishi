@@ -1,0 +1,42 @@
+[
+  {
+    "id": "q1",
+    "question": "运行 Python 时报错：TypeError: 'NoneType' object is not subscriptable，应该怎么排查？",
+    "expect_category": "error",
+    "expect_doc": "python_errors.md",
+    "expect_sufficient": true,
+    "note": "应引用 python_errors.md 中关于 NoneType 的段落"
+  },
+  {
+    "id": "q2",
+    "question": "SQL 里写了 WHERE class_id = NULL，为什么一行都查不出来？",
+    "expect_category": "sql",
+    "expect_doc": "sql_basics.md",
+    "expect_sufficient": true,
+    "note": "应命中 NULL 比较相关段落"
+  },
+  {
+    "id": "q3",
+    "question": "前端请求接口时浏览器报 CORS 错误，应该从哪里开始排查？",
+    "expect_category": "web",
+    "expect_doc": "web_debug.md",
+    "expect_sufficient": true,
+    "note": "应命中跨域与排查顺序相关段落"
+  },
+  {
+    "id": "q4",
+    "question": "Python 函数没有写 return 的时候会返回什么？为什么会拿到 None？",
+    "expect_category": "concept",
+    "expect_doc": "python_errors.md",
+    "expect_sufficient": true,
+    "note": "应命中函数隐式返回 None 的段落"
+  },
+  {
+    "id": "q5",
+    "question": "量子计算机会取代经典计算机吗？",
+    "expect_category": "concept",
+    "expect_doc": null,
+    "expect_sufficient": false,
+    "note": "知识库无相关资料，必须明确说资料不足且不给引用"
+  }
+]
