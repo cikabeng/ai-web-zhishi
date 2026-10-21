@@ -87,8 +87,17 @@ def chunk_blocks(
             continue
 
         flush()
-        # 新块从上一段的结尾带一点重叠，避免边界处丢失上下文
-        tail = chunks[-1].text[-overlap:] if chunks and overlap else ""
+        # 新块带一点上一块的结尾做重叠，但必须从句子边界开始，
+        # 否则引用片段会出现"ect is not callable"这种半句开头
+        tail = ""
+        if chunks and overlap:
+            previous = chunks[-1].text
+            window_start = max(0, len(previous) - overlap)
+            boundary = max((previous.rfind(mark, window_start) for mark in "。！？.!?；;"), default=-1)
+            if boundary >= 0:
+                window_start = boundary + 1
+            tail = previous[window_start:].strip()
+
         buffer = (tail + "\n" + text) if tail else text
         buffer_page = block.page
         buffer_heading = block.heading
