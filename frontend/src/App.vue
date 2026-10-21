@@ -1,7 +1,21 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
+import { fetchHealth } from '@/api/client'
+
 const route = useRoute()
+// 全局演示模式提示：没配模型时每条页面都要看得到，不能只写在首页
+const demoMode = ref(false)
+
+onMounted(async () => {
+  try {
+    const health = await fetchHealth()
+    demoMode.value = health.demo_mode
+  } catch {
+    demoMode.value = false
+  }
+})
 </script>
 
 <template>
@@ -43,6 +57,10 @@ const route = useRoute()
       </nav>
     </header>
 
+    <div v-if="demoMode" class="demo-banner">
+      演示模式 · 未配置大模型：检索与引用真实执行，回答由模板生成并已明确标注
+    </div>
+
     <main class="app-main">
       <RouterView />
     </main>
@@ -54,6 +72,15 @@ const route = useRoute()
 </template>
 
 <style scoped>
+.demo-banner {
+  padding: 8px 16px;
+  background: var(--c-warn-bg);
+  border-bottom: 1px solid #fde3b5;
+  color: var(--c-warn);
+  font-size: 12.5px;
+  text-align: center;
+}
+
 .brand {
   display: flex;
   align-items: center;
