@@ -34,6 +34,30 @@ LEAK_PHRASES = (
 )
 LEAK_REPLACEMENT = "（此处已收敛，避免直接给出答案）"
 
+_CITATION_MARK = re.compile(r"\[(\d+)\]")
+
+
+def sanitize_citations(text: str, allowed: int) -> tuple[str, bool]:
+    """把模型编出来的引用编号剔掉：只允许 [1..allowed]。
+
+    模型常见毛病是引用一个不在资料列表里的编号（比如资料只给了两条却写 [3]）。
+    这种"看起来有出处"的假引用比没有引用更糟，必须清掉。
+    """
+    removed = False
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal removed
+        index = int(match.group(1))
+        if 1 <= index <= allowed:
+            return match.group(0)
+        removed = True
+        return ""
+
+    cleaned = _CITATION_MARK.sub(replace, text)
+    if removed:
+        cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    return cleaned, removed
+
 
 def sanitize_text(text: str, max_chars: int) -> str:
     """去控制字符、压缩空行、截断超长输入。"""

@@ -1,4 +1,4 @@
-"""模型接入测试：提示词约束、客户端容错、引擎回退与状态标记。"""
+﻿"""模型接入测试：提示词约束、客户端容错、引擎回退与状态标记。"""
 
 from __future__ import annotations
 
@@ -91,6 +91,7 @@ def test_client_parses_openai_response() -> None:
         return httpx.Response(200, json={"choices": [{"message": {"content": "来自模型的回答 [1]"}}]})
 
     settings = Settings(
+        _env_file=None,
         LLM_API_KEY="sk-test",
         LLM_BASE_URL="http://localhost:1/v1",
         LLM_MODEL="fake-model",
@@ -108,6 +109,7 @@ def test_client_raises_on_server_error(monkeypatch: pytest.MonkeyPatch) -> None:
         return httpx.Response(500, json={"error": "boom"})
 
     settings = Settings(
+        _env_file=None,
         LLM_API_KEY="sk-test",
         LLM_BASE_URL="http://localhost:1/v1",
         LLM_MODEL="fake-model",
@@ -159,3 +161,37 @@ def test_level4_is_not_rewritten_by_model() -> None:
     assert response.level == 4
     example = next(block for block in response.blocks if block.kind == "example")
     assert example.meta.get("source") != "llm"
+
+
+def test_model_citations_are_pruned_to_real_sources() -> None:
+    engine = TeachingEngine(llm=FakeLLM(reply="结论一 [1]，结论二 [9]。"))
+    response = engine.respond(make_request())
+
+    explain = next(block for block in response.blocks if block.kind == "explain")
+    assert "[1]" in explain.content
+    assert "[9]" not in explain.content, "模型编造的引用编号必须被剔除"
+    assert explain.meta.get("citations_pruned") == "true"
+
+
+def test_model_receives_only_cited_chunks() -> None:
+    weak = RetrievedChunk(
+        chunk_id="sql_basics.md#p2",
+        doc_name="sql_basics.md",
+        text="SQL 的 NULL 与 Python 的 None 不是一回事。",
+        score=0.05,
+        paragraph_from=2,
+    )
+
+    class CapturingLLM(FakeLLM):
+        received: list = []
+
+        def compose_hint(self, **kwargs) -> str:
+            CapturingLLM.received = kwargs["chunks"]
+            return "模型解释 [1]"
+
+    engine = TeachingEngine(llm=CapturingLLM())
+    engine.respond(make_request(retrieval=[CHUNKS[0], weak], min_evidence_score=0.15))
+
+    ids = [chunk.chunk_id for chunk in CapturingLLM.received]
+    assert ids == ["python_errors.md#p4"], "低分片段不应进入提示词，否则会产生假引用"
+

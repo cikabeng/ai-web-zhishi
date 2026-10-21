@@ -14,6 +14,7 @@ from app.teaching.guards import (
     MAX_SUBMISSION_CHARS,
     code_line_count,
     guard_blocks,
+    sanitize_citations,
     sanitize_text,
 )
 from app.teaching.types import (
@@ -193,13 +194,20 @@ class TeachingEngine:
         llm_model: str | None = None
         if self.llm is not None and getattr(self.llm, "available", False) and level in (1, 2, 3):
             llm_model = getattr(self.llm, "model_name", None)
+            # 只把"真正进入引用列表"的片段交给模型，
+            # 否则模型会引用一个不在 citations 里的编号，形成假引用
+            cited_ids = [citation.chunk_id for citation in citations]
+            trusted_chunks = sorted(
+                (chunk for chunk in request.retrieval if chunk.chunk_id in cited_ids),
+                key=lambda chunk: cited_ids.index(chunk.chunk_id),
+            )
             try:
                 text = self.llm.compose_hint(
                     question=question,
                     level=level,
                     category_label=CATEGORY_LABELS[classification.category],
                     mode=request.mode.value,
-                    chunks=request.retrieval,
+                    chunks=trusted_chunks,
                     attempt=request.submission.text if request.submission else None,
                 )
                 if self._apply_llm(blocks, level, text):
@@ -209,6 +217,14 @@ class TeachingEngine:
             except Exception:
                 # 超时、限流、返回结构不符……都退回模板，保证演示不中断
                 llm_status = "fallback"
+
+        # 模型可能编造 [n]，这里按实际引用数量再做一次收敛
+        if llm_status == "model":
+            for block in blocks:
+                if block.meta.get("source") == "llm":
+                    block.content, pruned = sanitize_citations(block.content, len(citations))
+                    if pruned:
+                        block.meta["citations_pruned"] = "true"
 
         blocks, safety = guard_blocks(blocks)
 
