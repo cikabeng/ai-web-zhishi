@@ -23,9 +23,10 @@ def test_search_finds_python_error_doc() -> None:
     hits = retriever.search("TypeError NoneType 报错 怎么排查", top_k=3)
 
     assert hits, "示例资料里应当能检索到 Python 报错相关内容"
-    assert hits[0].doc_name == "python_errors.md"
+    # 资料库里有多个 Python 报错相关文档，命中其中之一即可（不绑定具体文件名）
+    assert hits[0].doc_name in {"python_errors.md", "python_type_errors.md"}
     assert hits[0].paragraph_from is not None
-    assert hits[0].chunk_id.startswith("python_errors.md#p")
+    assert hits[0].chunk_id.startswith(hits[0].doc_name + "#p")
     assert 0 < hits[0].score <= 1
 
 
