@@ -128,7 +128,18 @@ def _check_question(level: int, category: ProblemCategory, clues: dict[str, str]
 
 
 class TeachingEngine:
-    """无状态引擎：所有上下文都从请求里传入，便于测试与并发。"""
+    """无状态引擎：所有上下文都从请求里传入，便于测试与并发。
+
+    `llm` 可选：配置了模型且未强制演示模式时，用它润色 L1–L3 的讲解；
+    任何失败都回退到模板，并把状态写进响应，界面据此标注。
+    """
+
+    def __init__(self, llm=None) -> None:
+        if llm is None:
+            from app.llm.client import LLMClient
+
+            llm = LLMClient()
+        self.llm = llm
 
     def classify(
         self,
@@ -177,6 +188,28 @@ class TeachingEngine:
             insufficient=insufficient,
             example=example,
         )
+        # 配置了模型时，用模型润色 L1–L3 的讲解；失败一律回退模板
+        llm_status = "template"
+        llm_model: str | None = None
+        if self.llm is not None and getattr(self.llm, "available", False) and level in (1, 2, 3):
+            llm_model = getattr(self.llm, "model_name", None)
+            try:
+                text = self.llm.compose_hint(
+                    question=question,
+                    level=level,
+                    category_label=CATEGORY_LABELS[classification.category],
+                    mode=request.mode.value,
+                    chunks=request.retrieval,
+                    attempt=request.submission.text if request.submission else None,
+                )
+                if self._apply_llm(blocks, level, text):
+                    llm_status = "model"
+                else:
+                    llm_status = "fallback"
+            except Exception:
+                # 超时、限流、返回结构不符……都退回模板，保证演示不中断
+                llm_status = "fallback"
+
         blocks, safety = guard_blocks(blocks)
 
         if clamp_reason == "guided_requires_attempt":
@@ -200,6 +233,7 @@ class TeachingEngine:
                 "escalation": "max_one_level_per_step",
                 "example_label": templates.AI_EXAMPLE_LABEL if level == 4 else "none",
                 "mode": request.mode.value,
+                "llm": llm_status,
             }
         )
 
@@ -224,8 +258,21 @@ class TeachingEngine:
             next_level=level + 1 if level < int(HintLevel.L4) else None,
             insufficient_evidence=insufficient,
             example_generated=level == 4,
+            llm_status=llm_status,  # type: ignore[arg-type]
+            llm_model=llm_model,
             safety=safety,
         )
+
+    @staticmethod
+    def _apply_llm(blocks: list[HintBlock], level: int, text: str) -> bool:
+        """把模型生成的讲解替换进对应块：L1/L3 换 explain，L2 换 steps。"""
+        target = "steps" if level == 2 else "explain"
+        for block in blocks:
+            if block.kind == target:
+                block.content = text
+                block.meta["source"] = "llm"
+                return True
+        return False
 
     def feedback(self, request: TeachingRequest) -> SubmissionFeedback:
         """针对学生的代码/思路给出反馈。只做文本分析，绝不执行代码。"""

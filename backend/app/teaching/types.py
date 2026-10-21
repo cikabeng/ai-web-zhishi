@@ -192,6 +192,8 @@ class TeachingResponse(BaseModel):
     next_level: int | None
     insufficient_evidence: bool
     example_generated: bool
+    llm_status: Literal["model", "template", "fallback"] = "template"
+    llm_model: str | None = None
     safety: dict[str, str]
 
 
