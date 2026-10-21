@@ -155,6 +155,14 @@ onMounted(async () => {
     categories.value = []
   }
 
+  // 从截图报错分析跳转过来时，带上识别/修正后的报错内容
+  const preset = route.query.question
+  if (typeof preset === 'string' && preset.trim()) {
+    question.value = preset
+    await ask(0, 1, 'open')
+    return
+  }
+
   // 演示/录屏用：/teaching?demo=1 自动载入演示问题并给出第一层提示
   if (route.query.demo === '1') {
     await loadDemo()

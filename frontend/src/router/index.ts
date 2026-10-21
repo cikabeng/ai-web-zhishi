@@ -16,6 +16,12 @@ const router = createRouter({
       meta: { title: '分层教学' },
     },
     {
+      path: '/errors',
+      name: 'errors',
+      component: () => import('@/views/ErrorView.vue'),
+      meta: { title: '报错分析' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/',
     },

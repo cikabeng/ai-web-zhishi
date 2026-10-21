@@ -26,8 +26,14 @@ const route = useRoute()
         >
           分层教学
         </RouterLink>
+        <RouterLink
+          to="/errors"
+          class="nav-item"
+          :class="{ 'is-active': route.path === '/errors' }"
+        >
+          报错分析
+        </RouterLink>
         <span class="nav-item is-disabled" title="P1 阶段开放">知识库</span>
-        <span class="nav-item is-disabled" title="P4 阶段开放">报错诊断</span>
       </nav>
     </header>
 
