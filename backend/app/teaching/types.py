@@ -183,6 +183,7 @@ class TeachingResponse(BaseModel):
     level_name: str
     level_intent: str
     clamped: bool = Field(description="请求层级被服务端限制时为 true")
+    clamp_reason: Literal["max_one_level_per_step", "guided_requires_attempt"] | None = None
 
     blocks: list[HintBlock]
     citations: list[Citation]

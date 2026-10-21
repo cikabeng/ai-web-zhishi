@@ -24,16 +24,24 @@ from app.teaching.types import (
     Citation,
     ClassificationResult,
     FeedbackBlock,
+    HintBlock,
     HintLevel,
     ProblemCategory,
     RetrievedChunk,
     SubmissionFeedback,
+    TeachingMode,
     TeachingRequest,
     TeachingResponse,
 )
 
 MAX_CITATIONS = 3
 SNIPPET_LIMIT = 160
+# 只有达到这个分数的片段才允许影响分类，避免"沾边资料"把问题带偏
+TRUSTED_RETRIEVAL_SCORE = 0.30
+
+
+def _trusted_text(chunks: list[RetrievedChunk]) -> str:
+    return "\n".join(chunk.text for chunk in chunks if chunk.score >= TRUSTED_RETRIEVAL_SCORE)
 
 # 每类问题在提交反馈里期待出现的关键词（用于判断"有没有抓住重点"）
 _FEEDBACK_KEYWORDS: dict[ProblemCategory, list[str]] = {
@@ -128,18 +136,29 @@ class TeachingEngine:
         retrieval: list[RetrievedChunk] | None = None,
         category: ProblemCategory | None = None,
     ) -> ClassificationResult:
-        retrieval_text = "\n".join(chunk.text for chunk in (retrieval or []))
-        return classify(question, retrieval_text, category)
+        return classify(question, _trusted_text(retrieval or []), category)
 
     def respond(self, request: TeachingRequest) -> TeachingResponse:
         question = sanitize_text(request.question, 2000)
-        retrieval_text = "\n".join(chunk.text for chunk in request.retrieval)
-        classification = classify(question, retrieval_text, request.category)
+        classification = classify(question, _trusted_text(request.retrieval), request.category)
 
         # 核心约束：每次最多推进一级，客户端传更大的值也会被压回去
         ceiling = min(int(HintLevel.L4), request.current_level + 1)
+        clamp_reason: str | None = None
+
+        # 引导模式额外约束：进入 L3（局部示例）前必须先提交自己的尝试
+        if (
+            request.mode is TeachingMode.guided
+            and request.submission is None
+            and ceiling >= int(HintLevel.L3)
+        ):
+            ceiling = int(HintLevel.L2)
+            clamp_reason = "guided_requires_attempt"
+
         level = min(request.target_level, ceiling)
         clamped = level != request.target_level
+        if clamped and clamp_reason is None:
+            clamp_reason = "max_one_level_per_step"
 
         citations = build_citations(request.retrieval, request.min_evidence_score)
         insufficient = not citations
@@ -159,6 +178,18 @@ class TeachingEngine:
             example=example,
         )
         blocks, safety = guard_blocks(blocks)
+
+        if clamp_reason == "guided_requires_attempt":
+            blocks.insert(
+                0,
+                HintBlock(
+                    kind="note",
+                    title="需要先提交尝试",
+                    content="引导模式下，进入 L3（局部示例）前请先在下方写下你的思路或代码片段。"
+                    "这不是考核，而是为了让提示真正帮到你。",
+                    meta={"reason": "guided_requires_attempt"},
+                ),
+            )
 
         allowed: list[str] = ["understood", "continue", "rephrase", "submit"]
         if level >= int(HintLevel.L4):
@@ -185,6 +216,7 @@ class TeachingEngine:
             level_name=LEVEL_NAMES[level],
             level_intent=LEVEL_INTENTS[level],
             clamped=clamped,
+            clamp_reason=clamp_reason,  # type: ignore[arg-type]
             blocks=blocks,
             citations=citations,
             check_question=_check_question(level, classification.category, clues),
