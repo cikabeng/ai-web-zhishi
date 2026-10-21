@@ -60,6 +60,8 @@ export interface TeachingResponse {
   next_level: number | null
   insufficient_evidence: boolean
   example_generated: boolean
+  llm_status: 'model' | 'template' | 'fallback'
+  llm_model: string | null
   safety: Record<string, string>
 }
 

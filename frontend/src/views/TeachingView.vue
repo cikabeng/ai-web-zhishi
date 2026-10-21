@@ -254,7 +254,20 @@ onMounted(async () => {
             <h3 class="card-title">L{{ response.level }} · {{ response.level_name }}</h3>
             <p class="muted small">{{ response.level_intent }}</p>
           </div>
-          <span v-if="response.example_generated" class="badge-ai">AI 生成示例</span>
+          <div class="level-badges">
+            <span v-if="response.example_generated" class="badge-ai">AI 生成示例</span>
+            <span
+              v-if="response.llm_status === 'model'"
+              class="badge-ai"
+              :title="response.llm_model ?? ''"
+            >
+              模型生成
+            </span>
+            <span v-else-if="response.llm_status === 'fallback'" class="badge-warn">
+              模型失败 · 已回退模板
+            </span>
+            <span v-else class="badge-muted">模板生成</span>
+          </div>
         </div>
 
         <div class="blocks">
@@ -469,6 +482,22 @@ onMounted(async () => {
   color: var(--c-warn);
   font-size: 11.5px;
   font-weight: 600;
+}
+
+.badge-muted {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--c-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.level-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 /* 引导说明 */
