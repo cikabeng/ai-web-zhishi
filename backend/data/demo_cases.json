@@ -38,5 +38,13 @@
     "expect_doc": null,
     "expect_sufficient": false,
     "note": "知识库无相关资料，必须明确说资料不足且不给引用"
+  },
+  {
+    "id": "q6",
+    "question": "报错 TypeError: unsupported operand type(s) for +: 'int' and 'str'，怎么排查？",
+    "expect_category": "error",
+    "expect_doc": "python_type_errors.md",
+    "expect_sufficient": true,
+    "note": "整数与字符串相加，应命中类型错误专题资料"
   }
 ]
