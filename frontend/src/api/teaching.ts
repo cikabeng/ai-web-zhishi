@@ -81,6 +81,7 @@ export interface HintPayload {
   target_level: number
   variant: number
   action: HintAction
+  submission?: { kind: 'code' | 'thinking'; text: string }
 }
 
 export interface FeedbackPayload {

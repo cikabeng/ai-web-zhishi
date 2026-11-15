@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 import { toErrorMessage } from '@/api/client'
 import {
@@ -41,18 +42,33 @@ const error = ref('')
 const variant = ref(0)
 const understoodDone = ref(false)
 const activeCitation = ref<number | null>(null)
+const expandedCitation = ref<number | null>(null)
 
 const submissionKind = ref<'thinking' | 'code'>('thinking')
 const submissionText = ref('')
 const feedback = ref<SubmissionFeedback | null>(null)
 const feedbackLoading = ref(false)
 
+// 引导模式进入 L3 前的「先提交尝试」弹窗（方案 D）
+const attemptDialogVisible = ref(false)
+const attemptText = ref('')
+const attemptKind = ref<'thinking' | 'code'>('thinking')
+const attemptSubmitting = ref(false)
+const submissionPanel = ref<HTMLElement | null>(null)
+const submissionInput = ref<{ focus: () => void } | null>(null)
+const highlightSubmission = ref(false)
+
 const canStart = computed(() => question.value.trim().length >= 4 && !loading.value)
 const detectedCategory = computed(() => response.value?.category ?? null)
 const confidence = computed(() => response.value?.category_confidence ?? 0)
 const hasResult = computed(() => response.value !== null)
 
-async function ask(current: number, target: number, action: HintAction = 'open') {
+async function ask(
+  current: number,
+  target: number,
+  action: HintAction = 'open',
+  submission?: { kind: 'thinking' | 'code'; text: string },
+) {
   if (!question.value.trim()) return
   loading.value = true
   error.value = ''
@@ -65,10 +81,12 @@ async function ask(current: number, target: number, action: HintAction = 'open')
       target_level: target,
       variant: variant.value,
       action,
+      ...(submission ? { submission } : {}),
     })
     understoodDone.value = false
     feedback.value = null
     activeCitation.value = null
+    expandedCitation.value = null
   } catch (cause) {
     error.value = toErrorMessage(cause)
   } finally {
@@ -90,7 +108,88 @@ function next() {
   const current = response.value
   if (!current || current.next_level === null) return
   variant.value = 0
-  void ask(current.level, current.next_level, 'continue')
+  void ask(current.level, current.next_level, 'continue').then(() => {
+    // 被「需要先提交尝试」拦住时，直接把输入弹窗摆到用户面前，避免不明不白卡住
+    if (response.value?.clamp_reason === 'guided_requires_attempt') {
+      openAttemptDialog()
+    }
+  })
+}
+
+function openAttemptDialog() {
+  attemptKind.value = submissionKind.value
+  attemptText.value = submissionText.value
+  attemptDialogVisible.value = true
+}
+
+function scrollToSubmission() {
+  void nextTick(() => {
+    attemptDialogVisible.value = false
+    const panel = submissionPanel.value
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      submissionInput.value?.focus?.()
+      highlightSubmission.value = true
+      window.setTimeout(() => {
+        highlightSubmission.value = false
+      }, 2000)
+    }
+  })
+}
+
+function buildDemoAttempt(): string {
+  const text = question.value
+  if (/NoneType|None/i.test(text)) {
+    return [
+      '我观察到：报错发生在 print(info[\'score\']) 这一行。',
+      '我怀疑：info 是 None，因为 get_student 在查不到用户时走到了函数末尾，没有 return。',
+      '我准备先验证：在报错前打印 type(info) 和 repr(info)，再决定是补 return 还是调用处判空。',
+    ].join('\n')
+  }
+  if (/unsupported operand|int.*str|类型/i.test(text)) {
+    return [
+      '我观察到：对 1 和 "2" 做加法时崩溃。',
+      '我怀疑：b 是从输入拿到的字符串，不是数字。',
+      '我准备先验证：打印 type(a)、type(b)，再按业务语义决定用 int(b) 还是 str(a)。',
+    ].join('\n')
+  }
+  return [
+    '我观察到：程序在我自己写的某一行报错。',
+    '我怀疑：那一行用到的变量，实际值和我的预期不一致。',
+    '我准备先验证：在报错行之前打印相关变量的类型和值，再按结果决定下一步。',
+  ].join('\n')
+}
+
+function fillDemoAttempt() {
+  attemptKind.value = 'thinking'
+  attemptText.value = buildDemoAttempt()
+}
+
+async function submitAttempt() {
+  const text = attemptText.value.trim()
+  if (text.length < 15) {
+    ElMessage.warning('至少写 15 个字，说清楚你观察到了什么、怀疑什么')
+    return
+  }
+  const current = response.value
+  if (!current) return
+
+  attemptSubmitting.value = true
+  try {
+    // 同步到下方提交面板，保证「已提交」这件事只记录一次
+    submissionKind.value = attemptKind.value
+    submissionText.value = text
+
+    await ask(current.level, 3, 'continue', { kind: attemptKind.value, text })
+    attemptDialogVisible.value = false
+
+    // 顺手把反馈也取回来，学生能立刻看到对自己尝试的评价
+    void submit()
+  } catch (cause) {
+    error.value = toErrorMessage(cause)
+  } finally {
+    attemptSubmitting.value = false
+  }
 }
 
 function rephrase() {
@@ -99,6 +198,11 @@ function rephrase() {
   void ask(current.level, current.level, 'rephrase').then(() => {
     variant.value += 1
   })
+}
+
+function toggleCitation(index: number) {
+  activeCitation.value = index
+  expandedCitation.value = expandedCitation.value === index ? null : index
 }
 
 function understood() {
@@ -114,6 +218,12 @@ function onCategorySelect(value: CategoryValue) {
 function onModeChange() {
   const current = response.value
   if (current) void ask(current.level, current.level, 'open')
+}
+
+function setMode(value: TeachingModeValue) {
+  if (mode.value === value) return
+  mode.value = value
+  onModeChange()
 }
 
 async function loadDemo() {
@@ -182,10 +292,51 @@ onMounted(async () => {
         </p>
       </div>
       <div class="head-actions">
-        <el-radio-group v-model="mode" size="small" @change="onModeChange">
-          <el-radio-button value="guided">引导模式</el-radio-button>
-          <el-radio-button value="study">学习模式</el-radio-button>
-        </el-radio-group>
+        <div class="mode-switch" role="group" aria-label="教学模式">
+          <el-tooltip placement="bottom" :show-after="150" popper-class="mode-tooltip">
+            <template #content>
+              <div class="mode-tip">
+                <strong>引导模式</strong>
+                <ul>
+                  <li>进入 L3 前必须提交一次自己的尝试</li>
+                  <li>多反问、少下结论，像助教在旁边提问</li>
+                  <li>适合：学生独立完成作业</li>
+                </ul>
+              </div>
+            </template>
+            <button
+              type="button"
+              class="mode-btn"
+              :class="{ active: mode === 'guided' }"
+              :aria-pressed="mode === 'guided'"
+              @click="setMode('guided')"
+            >
+              引导模式
+            </button>
+          </el-tooltip>
+
+          <el-tooltip placement="bottom" :show-after="150" popper-class="mode-tooltip">
+            <template #content>
+              <div class="mode-tip">
+                <strong>学习模式</strong>
+                <ul>
+                  <li>不要求先提交尝试，可直接逐级查看</li>
+                  <li>讲解更完整、更少反问</li>
+                  <li>适合：复习、听讲解</li>
+                </ul>
+              </div>
+            </template>
+            <button
+              type="button"
+              class="mode-btn"
+              :class="{ active: mode === 'study' }"
+              :aria-pressed="mode === 'study'"
+              @click="setMode('study')"
+            >
+              学习模式
+            </button>
+          </el-tooltip>
+        </div>
         <el-button size="small" @click="loadDemo">载入演示问题</el-button>
       </div>
     </header>
@@ -244,9 +395,18 @@ onMounted(async () => {
         />
       </section>
 
-      <section class="card">
-        <HintLadder :level="response.level" :clamped="response.clamped" :reason="response.clamp_reason" />
-      </section>
+      <div class="session-layout">
+        <aside class="steps-rail">
+          <p class="rail-title">学习进度</p>
+          <HintLadder
+            :level="response.level"
+            :clamped="response.clamped"
+            :reason="response.clamp_reason"
+            vertical
+          />
+        </aside>
+
+        <div class="session-main">
 
       <section class="card">
         <div class="row row-between">
@@ -286,7 +446,7 @@ onMounted(async () => {
                   :key="n"
                   type="button"
                   class="cite-btn"
-                  @click="activeCitation = n"
+                  @click="toggleCitation(n)"
                 >
                   [{{ n }}]
                 </button>
@@ -295,6 +455,11 @@ onMounted(async () => {
 
             <pre v-if="block.kind === 'code'" class="code-block"><code>{{ block.content }}</code></pre>
             <div v-else class="md" v-html="renderMarkdown(block.content)" />
+
+            <div v-if="block.meta.reason === 'guided_requires_attempt'" class="block-cta">
+              <el-button type="primary" size="small" @click="openAttemptDialog">去写尝试并进入 L3</el-button>
+              <el-button size="small" text @click="scrollToSubmission">滚到下方提交框</el-button>
+            </div>
           </article>
         </div>
 
@@ -335,21 +500,29 @@ onMounted(async () => {
           <li
             v-for="citation in response.citations"
             :key="citation.chunk_id"
-            :class="{ active: activeCitation === citation.index }"
+            :class="{
+              active: activeCitation === citation.index,
+              expanded: expandedCitation === citation.index,
+            }"
           >
-            <div class="cite-head">
+            <button type="button" class="cite-row" @click="toggleCitation(citation.index)">
               <span class="cite-index">[{{ citation.index }}]</span>
-              <strong>《{{ citation.doc_name }}》</strong>
+              <span class="cite-doc">《{{ citation.doc_name }}》</span>
               <span class="cite-loc">{{ citation.location }}</span>
-              <span class="cite-score">相关度 {{ (citation.score * 100).toFixed(0) }}%</span>
-            </div>
-            <p class="cite-text">{{ citation.snippet }}</p>
-            <p v-if="citation.heading" class="cite-heading">章节：{{ citation.heading }}</p>
+              <span v-if="citation.heading" class="cite-heading">{{ citation.heading }}</span>
+              <span class="cite-score">{{ (citation.score * 100).toFixed(0) }}%</span>
+              <span class="cite-toggle">{{ expandedCitation === citation.index ? '收起' : '原文' }}</span>
+            </button>
+            <p v-if="expandedCitation === citation.index" class="cite-text">{{ citation.snippet }}</p>
           </li>
         </ol>
       </section>
 
-      <section class="card">
+      <section
+        ref="submissionPanel"
+        class="card submission-card"
+        :class="{ 'is-highlighted': highlightSubmission }"
+      >
         <div class="row row-between">
           <h3 class="card-title">提交你的思路或代码</h3>
           <span class="muted small">只做文本分析，不会执行你的代码</span>
@@ -361,6 +534,7 @@ onMounted(async () => {
         </el-radio-group>
 
         <el-input
+          ref="submissionInput"
           v-model="submissionText"
           type="textarea"
           :rows="4"
@@ -395,7 +569,57 @@ onMounted(async () => {
           <p class="feedback-next">下一步：{{ feedback.next_question }}</p>
         </div>
       </section>
+        </div>
+      </div>
     </template>
+
+    <el-dialog
+      v-model="attemptDialogVisible"
+      title="先写下你的尝试，再进 L3"
+      width="560px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <p class="dialog-hint">
+        引导模式下，进入 L3（局部示例）前需要先提交一次你自己的思路或代码片段。
+        这不是考核，是为了让提示真正帮到你——直接看示例，学习效果会差很多。
+      </p>
+
+      <el-radio-group v-model="attemptKind" size="small" class="kind-switch">
+        <el-radio-button value="thinking">我的思路</el-radio-button>
+        <el-radio-button value="code">我的代码片段</el-radio-button>
+      </el-radio-group>
+
+      <el-input
+        v-model="attemptText"
+        type="textarea"
+        :rows="5"
+        maxlength="4000"
+        show-word-limit
+        resize="none"
+        :placeholder="
+          attemptKind === 'code'
+            ? '把你改到一半的代码贴进来（建议只贴出问题的那几行）'
+            : '例如：我怀疑 info 是 None，因为 get_student 在查不到时没有 return'
+        "
+      />
+      <div class="dialog-tip-row">
+        <p class="dialog-tip">至少 15 个字。提交后会立刻进入 L3，并给出针对你这段尝试的反馈。</p>
+        <el-button text type="primary" size="small" @click="fillDemoAttempt">填入示例尝试（演示用）</el-button>
+      </div>
+
+      <template #footer>
+        <el-button @click="scrollToSubmission">取消，去页面下方写</el-button>
+        <el-button
+          type="primary"
+          :loading="attemptSubmitting"
+          :disabled="attemptText.trim().length < 15"
+          @click="submitAttempt"
+        >
+          提交并进入 L3
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -431,6 +655,104 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* 模式切换：两个按钮各自带悬浮说明，让评委一眼看出差别 */
+.mode-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.mode-btn {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.mode-btn:hover {
+  background: var(--c-brand-50);
+  color: var(--c-brand-700);
+}
+
+.mode-btn.active {
+  background: var(--c-brand-600);
+  color: #fff;
+  font-weight: 600;
+}
+
+.mode-btn.active:hover {
+  background: var(--c-brand-700);
+  color: #fff;
+}
+
+:global(.mode-tooltip) {
+  max-width: 260px;
+}
+
+:global(.mode-tooltip .mode-tip strong) {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+:global(.mode-tooltip .mode-tip ul) {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* 左侧竖向进度 + 右侧内容 */
+.session-layout {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.steps-rail {
+  position: sticky;
+  top: 92px;
+  padding: 14px 10px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-card);
+  z-index: 2;
+}
+
+.rail-title {
+  margin: 0 0 8px 10px;
+  color: var(--c-text-muted);
+  font-size: 11.5px;
+  letter-spacing: 0.5px;
+}
+
+.session-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .steps-rail {
+    position: static;
+  }
 }
 
 .card {
@@ -698,21 +1020,21 @@ onMounted(async () => {
   font-size: 12.5px;
 }
 
-/* 引用 */
+/* 引用：默认一行，点击展开原文 */
 .citation-list {
   margin: 12px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .citation-list li {
-  padding: 12px 14px;
   border: 1px solid var(--c-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: #fbfdff;
+  overflow: hidden;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -721,12 +1043,27 @@ onMounted(async () => {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.cite-head {
+.citation-list li.expanded {
+  border-color: var(--c-brand-100);
+}
+
+.cite-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cite-row:hover {
+  background: var(--c-brand-50);
 }
 
 .cite-index {
@@ -734,31 +1071,50 @@ onMounted(async () => {
   font-weight: 700;
 }
 
+.cite-doc {
+  color: var(--c-text-strong);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .cite-loc {
   padding: 1px 7px;
   border-radius: 999px;
   background: #eef2f7;
   color: var(--c-text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cite-heading {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text-subtle);
   font-size: 11.5px;
 }
 
 .cite-score {
-  margin-left: auto;
   color: var(--c-text-subtle);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cite-toggle {
+  color: var(--c-brand-600);
   font-size: 11.5px;
+  white-space: nowrap;
 }
 
 .cite-text {
-  margin-top: 8px;
+  margin: 0;
+  padding: 8px 12px 10px;
+  border-top: 1px dashed var(--c-border);
   color: var(--c-text);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.7;
-}
-
-.cite-heading {
-  margin-top: 6px;
-  color: var(--c-text-subtle);
-  font-size: 11.5px;
 }
 
 .empty {
@@ -774,6 +1130,61 @@ onMounted(async () => {
 /* 提交反馈 */
 .kind-switch {
   margin: 12px 0;
+}
+
+/* 「需要先提交尝试」的引导 */
+.block-cta {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.submission-card {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.submission-card.is-highlighted {
+  border-color: var(--c-brand-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), var(--shadow-card);
+  animation: submit-pulse 1s ease-in-out 2;
+}
+
+@keyframes submit-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), var(--shadow-card);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.1), var(--shadow-card);
+  }
+}
+
+.dialog-hint {
+  margin: 0 0 6px;
+  color: var(--c-text);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.dialog-tip {
+  margin: 8px 0 0;
+  color: var(--c-text-muted);
+  font-size: 12px;
+}
+
+.dialog-tip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dialog-tip-row .dialog-tip {
+  margin: 8px 0 0;
+  flex: 1;
+  min-width: 200px;
 }
 
 .feedback {

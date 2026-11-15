@@ -5,6 +5,8 @@ const props = defineProps<{
   level: number
   clamped: boolean
   reason?: 'max_one_level_per_step' | 'guided_requires_attempt' | null
+  /** 竖排（左侧进度栏）或横排（顶部步骤条） */
+  vertical?: boolean
 }>()
 
 const steps = [
@@ -29,7 +31,7 @@ const clampText = computed(() => {
 </script>
 
 <template>
-  <div class="ladder">
+  <div class="ladder" :class="{ vertical: vertical }">
     <div
       v-for="step in steps"
       :key="step.level"
@@ -38,6 +40,7 @@ const clampText = computed(() => {
     >
       <span class="dot">{{ step.level < props.level ? '✓' : step.level }}</span>
       <span class="name">{{ step.name }}</span>
+      <span v-if="stateOf(step.level) === 'current'" class="current-tag">当前</span>
     </div>
     <p v-if="clamped" class="clamp-note">{{ clampText }}</p>
   </div>
@@ -99,10 +102,85 @@ const clampText = computed(() => {
   color: #fff;
 }
 
+.current-tag {
+  display: none;
+}
+
 .clamp-note {
   width: 100%;
   margin-top: 4px;
   color: var(--c-warn);
   font-size: 12.5px;
+}
+
+/* ---------- 竖排：左侧进度栏 ---------- */
+.ladder.vertical {
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+.ladder.vertical::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 16px;
+  bottom: 16px;
+  width: 2px;
+  background: var(--c-border);
+}
+
+.ladder.vertical .step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13px;
+}
+
+.ladder.vertical .step .dot {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 3px solid var(--c-surface);
+  box-sizing: content-box;
+}
+
+.ladder.vertical .step.done {
+  background: transparent;
+  color: var(--c-brand-700);
+}
+
+.ladder.vertical .step.current {
+  border-color: var(--c-brand-100);
+  background: var(--c-brand-50);
+  box-shadow: none;
+}
+
+.ladder.vertical .step.locked {
+  color: var(--c-text-subtle);
+}
+
+.ladder.vertical .current-tag {
+  display: inline-block;
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--c-brand-600);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.ladder.vertical .clamp-note {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  line-height: 1.6;
 }
 </style>
