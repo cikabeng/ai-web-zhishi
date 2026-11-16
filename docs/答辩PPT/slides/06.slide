@@ -1,0 +1,38 @@
+<Slide style={{ width: 1280, height: 720, padding: 0, background: '#FFFFFF', fontFamily: 'Source Han Sans SC, Microsoft YaHei, Arial, sans-serif' }}>
+  <Box style={{ width: 1280, height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 60, paddingRight: 60 }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>L1→L4：让思考先于答案</Text>
+    <Text style={{ fontSize: 16, color: '#C9DBF5' }}>05 · GUIDED TEACHING</Text>
+  </Box>
+  <Box style={{ width: 1280, height: 1, background: '#D6DCE5' }} />
+  <Box style={{ width: 1280, height: 581, paddingLeft: 60, paddingRight: 60, paddingTop: 26, paddingBottom: 18, flexDirection: 'column', gap: 16 }}>
+    <Box style={{ width: 1160, height: 330, flexDirection: 'row', gap: 18 }}>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+        <Box style={{ width: 46, height: 30, background: '#1E4FA8', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' }}>L1</Text></Box>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>知识点提示</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.5 }}>讲清概念与报错含义，不含代码。模型可润色。</Text>
+      </Box>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+        <Box style={{ width: 46, height: 30, background: '#1E4FA8', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' }}>L2</Text></Box>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>解题思路</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.5 }}>给排查路径与步骤，不给实现。模型可润色。</Text>
+      </Box>
+      <Box style={{ width: 275, border: '1px solid #3D7BD9', background: '#F7F9FC', paddingLeft: 18, paddingRight: 18, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+        <Box style={{ width: 46, height: 30, background: '#3D7BD9', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' }}>L3</Text></Box>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>局部示例</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.5 }}>代码 ≤6 行。**必须先提交自己的尝试**才可解锁。</Text>
+      </Box>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+        <Box style={{ width: 46, height: 30, background: '#1E4FA8', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' }}>L4</Text></Box>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>相似例题</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.5 }}>固定题库，明确标注 AI 生成，用于迁移练习。</Text>
+      </Box>
+    </Box>
+    <Box style={{ width: 1160, height: 150, background: '#E8EFF8', paddingLeft: 26, paddingRight: 26, paddingTop: 16, flexDirection: 'column', gap: 8 }}>
+      <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>两级硬约束</Text>
+      <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.7 }}>
+        跳级拦截：从 L0 直接请求 L4 → 压回 L1，clamp_reason = max_one_level_per_step<br />
+        引导门槛：未提交尝试就想看 L3 → clamp_reason = guided_requires_attempt，前端弹窗提示
+      </Text>
+    </Box>
+  </Box>
+</Slide>

@@ -1,0 +1,38 @@
+<Slide style={{ width: 1280, height: 720, padding: 0, background: '#FFFFFF', fontFamily: 'Source Han Sans SC, Microsoft YaHei, Arial, sans-serif' }}>
+  <Box style={{ width: 1280, height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 60, paddingRight: 60 }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>六道护栏：让 AI 可控、可解释</Text>
+    <Text style={{ fontSize: 16, color: '#C9DBF5' }}>07 · SAFETY</Text>
+  </Box>
+  <Box style={{ width: 1280, height: 1, background: '#D6DCE5' }} />
+  <Box style={{ width: 1280, height: 581, paddingLeft: 60, paddingRight: 60, paddingTop: 24, paddingBottom: 18, flexDirection: 'column', gap: 14 }}>
+    <Box style={{ width: 1160, height: 360, flexDirection: 'row', gap: 20 }}>
+      <Box style={{ width: 568, flexDirection: 'column', gap: 12 }}>
+        <Box style={{ width: 568, height: 112, border: '1px solid #D6DCE5', paddingLeft: 20, paddingRight: 20, paddingTop: 14, flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>① 引用强制 · ② 编号清洗</Text>
+          <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>引用必须来自真实检索片段；模型输出中的越界编号直接剔除，杜绝编造引用。</Text>
+        </Box>
+        <Box style={{ width: 568, height: 112, border: '1px solid #D6DCE5', paddingLeft: 20, paddingRight: 20, paddingTop: 14, flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>③ 覆盖度判定 · ④ 泄露收敛</Text>
+          <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>资料只是沾边不算有据；L3 代码 ≤6 行，检测完整实现并收敛泄露短语。</Text>
+        </Box>
+        <Box style={{ width: 568, height: 112, border: '1px solid #D6DCE5', paddingLeft: 20, paddingRight: 20, paddingTop: 14, flexDirection: 'column', gap: 6 }}>
+          <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>⑤ 不执行用户代码 · ⑥ 密钥不出后端</Text>
+          <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>无 exec / eval / subprocess；前端 DOMPurify 清洗；密钥只在后端 .env。</Text>
+        </Box>
+      </Box>
+      <Box style={{ width: 572, border: '1px solid #3D7BD9', background: '#F7F9FC', paddingLeft: 24, paddingRight: 24, paddingTop: 20, flexDirection: 'column', gap: 12 }}>
+        <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#1E4FA8' }}>为什么要做这么多约束</Text>
+        <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.75 }}>
+          教学场景里，一个编造的引用比没有回答更有害——它让学生失去了核对的能力与习惯。
+        </Text>
+        <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.75 }}>
+          所以系统宁可说「资料不足」，或者给出明确标注的通用诊断，也不冒充有课程依据。
+        </Text>
+        <Text style={{ fontSize: 17, color: '#4A5568', lineHeight: 1.6 }}>护栏触发会在响应 safety 字段留痕，可追溯、可写测试。</Text>
+      </Box>
+    </Box>
+    <Box style={{ width: 1160, height: 96, background: '#1E4FA8', paddingLeft: 26, paddingRight: 26, flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ fontSize: 21, color: '#FFFFFF' }}>AI 安全不是附加题，而是教学类 AI 作品能否成立的前提。</Text>
+    </Box>
+  </Box>
+</Slide>

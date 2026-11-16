@@ -1,0 +1,37 @@
+<Slide style={{ width: 1280, height: 720, padding: 0, background: '#FFFFFF', fontFamily: 'Source Han Sans SC, Microsoft YaHei, Arial, sans-serif' }}>
+  <Box style={{ width: 1280, height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 60, paddingRight: 60 }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>作品全貌：四个模块，四条底线</Text>
+    <Text style={{ fontSize: 16, color: '#C9DBF5' }}>02 · OVERVIEW</Text>
+  </Box>
+  <Box style={{ width: 1280, height: 1, background: '#D6DCE5' }} />
+  <Box style={{ width: 1280, height: 581, paddingLeft: 60, paddingRight: 60, paddingTop: 24, paddingBottom: 18, flexDirection: 'column', gap: 16 }}>
+    <Box style={{ width: 1160, height: 200, flexDirection: 'row', gap: 20 }}>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 16, flexDirection: 'column', gap: 8 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>课程知识库</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>上传解析、分块、Chroma 索引、sha256 去重、删除同步清向量。</Text>
+      </Box>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 16, flexDirection: 'column', gap: 8 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>分层教学引擎</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>六类分类、L1–L4 逐级解锁、L3 提交门槛、安全护栏与反馈。</Text>
+      </Box>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 16, flexDirection: 'column', gap: 8 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>通用知识与覆盖度</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>资料只沾边不误判有据；13 类常见报错给标注清楚的通用诊断。</Text>
+      </Box>
+      <Box style={{ width: 275, border: '1px solid #D6DCE5', paddingLeft: 18, paddingRight: 18, paddingTop: 16, flexDirection: 'column', gap: 8 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>截图报错分析</Text>
+        <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.45 }}>四通道 OCR、识别可编辑、重新分析、复用检索与教学链路。</Text>
+      </Box>
+    </Box>
+    <Box style={{ width: 1160, height: 210, background: '#F7F9FC', paddingLeft: 26, paddingRight: 26, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+      <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#1E4FA8' }}>四条底线 → 四处实现</Text>
+      <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.7 }}>
+        有据可查 → 引用卡片可点开原文　　无据则明说 → 覆盖度不足标记资料不足<br />
+        引导优先 → 每次最多推进一级、L3 需先提交　　演示诚实 → 模板 / 模型 / 回退三态标注
+      </Text>
+    </Box>
+    <Box style={{ width: 1160, height: 62, background: '#1E4FA8', paddingLeft: 22, flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ fontSize: 20, color: '#FFFFFF' }}>41 次真实提交 · 124 个测试通过 · 6/6 演示自检 · 4 篇 / 15 片段</Text>
+    </Box>
+  </Box>
+</Slide>

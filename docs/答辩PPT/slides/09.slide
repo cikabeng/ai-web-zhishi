@@ -1,0 +1,36 @@
+<Slide style={{ width: 1280, height: 720, padding: 0, background: '#FFFFFF', fontFamily: 'Source Han Sans SC, Microsoft YaHei, Arial, sans-serif' }}>
+  <Box style={{ width: 1280, height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 60, paddingRight: 60 }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>两处现场演示最能说明问题</Text>
+    <Text style={{ fontSize: 16, color: '#C9DBF5' }}>08 · DEMO</Text>
+  </Box>
+  <Box style={{ width: 1280, height: 1, background: '#D6DCE5' }} />
+  <Box style={{ width: 1280, height: 581, paddingLeft: 60, paddingRight: 60, paddingTop: 24, paddingBottom: 18, flexDirection: 'column', gap: 16 }}>
+    <Box style={{ width: 1160, height: 220, flexDirection: 'row', gap: 20 }}>
+      <Box style={{ width: 568, border: '1px solid #D6DCE5', paddingLeft: 22, paddingRight: 22, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+        <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#1E4FA8' }}>演示 A：点开引用核对原文</Text>
+        <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.65 }}>
+          提问 Python 报错 → 得到 L1 提示 → 点开引用卡片<br />
+          → 看到文档名、段落位置、原文片段<br />
+          → 结论与资料一一对应，不是模型凭空生成
+        </Text>
+      </Box>
+      <Box style={{ width: 568, border: '1px solid #3D7BD9', background: '#F7F9FC', paddingLeft: 22, paddingRight: 22, paddingTop: 18, flexDirection: 'column', gap: 10 }}>
+        <Text style={{ fontSize: 23, fontWeight: 'bold', color: '#1E4FA8' }}>演示 B：知识库外问题明确拒答</Text>
+        <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.65 }}>
+          提问「量子退火优化食堂排队，给完整代码」<br />
+          → 回答以「资料不足」开头，说明资料范围<br />
+          → 拒绝给任何代码，不编造引用
+        </Text>
+      </Box>
+    </Box>
+    <Box style={{ width: 1160, height: 150, border: '1px solid #D6DCE5', paddingLeft: 24, paddingRight: 24, paddingTop: 16, flexDirection: 'column', gap: 8 }}>
+      <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>第三层：资料没覆盖，但错误很常见怎么办？</Text>
+      <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.7 }}>
+        通用知识层覆盖 13 类常见 Python 报错，给出诊断与排查步骤，但界面明确标注「通用 Python 知识（非课程资料）」——既不装作有据，也不只是说不知道。
+      </Text>
+    </Box>
+    <Box style={{ width: 1160, height: 68, background: '#1E4FA8', paddingLeft: 24, flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ fontSize: 20, color: '#FFFFFF' }}>可核对 + 会拒答 + 标注清楚，三件事一起做到才是「负责任的 AI 助教」。</Text>
+    </Box>
+  </Box>
+</Slide>

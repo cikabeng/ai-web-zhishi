@@ -1,4 +1,4 @@
-"""按 5 个标准问题核对检索与回答，输出 PASS / FAIL。
+"""按 6 个标准问题核对检索与回答，输出 PASS / FAIL。
 
 运行（会先把示例资料导入知识库）：
     .venv\\Scripts\\python.exe scripts\\check_demo.py

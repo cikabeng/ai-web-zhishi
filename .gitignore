@@ -17,6 +17,8 @@ dist/
 storage/
 *.log
 .tmp/
+.tmp_*.json
+.slidep/
 
 # ---------- 配置与密钥 ----------
 .env

@@ -1,0 +1,32 @@
+<Slide style={{ width: 1280, height: 720, padding: 0, background: '#FFFFFF', fontFamily: 'Source Han Sans SC, Microsoft YaHei, Arial, sans-serif' }}>
+  <Box style={{ width: 1280, height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 60, paddingRight: 60 }}>
+    <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>创新点：把 AI 用在促进学习，而不是替代学习</Text>
+    <Text style={{ fontSize: 16, color: '#C9DBF5' }}>10 · INNOVATION</Text>
+  </Box>
+  <Box style={{ width: 1280, height: 1, background: '#D6DCE5' }} />
+  <Box style={{ width: 1280, height: 581, paddingLeft: 60, paddingRight: 60, paddingTop: 24, paddingBottom: 18, flexDirection: 'column', gap: 16 }}>
+    <Box style={{ width: 1160, height: 350, flexDirection: 'row', gap: 20 }}>
+      <Box style={{ width: 568, border: '1px solid #D6DCE5', paddingLeft: 24, paddingRight: 24, paddingTop: 20, flexDirection: 'column', gap: 12 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1E4FA8' }}>技术创新</Text>
+        <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.75 }}>
+          ① 引导式分层教学：L1→L4 逐级解锁，L3 前必须提交尝试，代码 ≤6 行并有泄露收敛<br />
+          ② 证据覆盖度 + 通用知识分层：防误判、会诊断、标注边界<br />
+          ③ 引用强制与幻觉抑制：只传被引用片段，输出清洗越界编号<br />
+          ④ 零依赖混合检索：哈希向量 + 字面加权 + 内置兜底
+        </Text>
+      </Box>
+      <Box style={{ width: 568, border: '1px solid #3D7BD9', background: '#F7F9FC', paddingLeft: 24, paddingRight: 24, paddingTop: 20, flexDirection: 'column', gap: 12 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1E4FA8' }}>应用创新</Text>
+        <Text style={{ fontSize: 19, color: '#1A2230', lineHeight: 1.75 }}>
+          ① 面向软件工程实训的「负责任 AI 助教」<br />
+          ② 截图即问：上传 → OCR → 可编辑 → 复用检索与教学<br />
+          ③ 10 分钟极速复现：一键脚本 + 自检 + 演示模式<br />
+          ④ 诚实标注：模板、通用知识、失败回退都注明来源
+        </Text>
+      </Box>
+    </Box>
+    <Box style={{ width: 1160, height: 92, background: '#1E4FA8', paddingLeft: 26, paddingRight: 26, flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ fontSize: 22, color: '#FFFFFF' }}>其他 RAG 作品在比「答得多准」，我们在回答「该不该答、答到哪一层」。</Text>
+    </Box>
+  </Box>
+</Slide>
